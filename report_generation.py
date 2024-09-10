@@ -1,4 +1,16 @@
+# --- Beginning of File ---
 # report_generation.py
+# Author: Tiran Ronelle Winston
+# Created: September 10, 2024
+# Last Modified: September 10, 2024
+# Description: This script generates a comprehensive report on an individual's weight loss journey. 
+#              It includes details such as body composition changes, metabolic adaptations, and workout analysis.
+# Usage: This script can be executed directly to generate a report based on provided progression data and initial parameters.
+# Dependencies: tabulate, calculations (local module), utils (local module), datetime, os, markdown, pdfkit
+# Version: 1.0.0
+# License: Apache License 2.0
+# --- End of Header ---
+
 from tabulate import tabulate
 from calculations import calculate_metabolic_adaptation
 from utils import calculate_age, estimate_tef, estimate_neat
@@ -11,6 +23,18 @@ import pdfkit
 RESULTS_FOLDER = r"C:\Code_Projects\bf-estimator-v2\results"
 
 def get_body_fat_info(gender, body_fat_percentage):
+    """
+    Determines the body fat category, estimated time to achieve six-pack abs, 
+    and description based on the user's gender and body fat percentage.
+
+    Parameters:
+    gender (str): Gender of the user ('m' for male, 'f' for female).
+    body_fat_percentage (float): Current body fat percentage of the user.
+
+    Returns:
+    tuple: A tuple containing the body fat category name, estimated time to 
+           achieve six-pack abs, and a brief description of the physical condition.
+    """
     categories = [
         {"name": "Very Lean", "men": 10, "women": 18, "time": "3-4 weeks", "description": "Visible abs, vascularity, striations"},
         {"name": "Lean", "men": 14, "women": 22, "time": "2-3 months", "description": "Some muscle definition, less visible abs"},
@@ -20,39 +44,63 @@ def get_body_fat_info(gender, body_fat_percentage):
         {"name": "Obese", "men": float('inf'), "women": float('inf'), "time": "12+ months", "description": "Significant excess fat all around"}
     ]
 
+    # Determine the threshold key based on gender
     threshold_key = "men" if gender.lower() == 'm' else "women"
 
+    # Iterate through categories to find the appropriate one
     for category in categories:
         if body_fat_percentage < category[threshold_key]:
             return category["name"], category["time"], category["description"]
 
+    # Return the last category if no other category is matched
     return categories[-1]["name"], categories[-1]["time"], categories[-1]["description"]
 
 def generate_comprehensive_report(progression, initial_data):
+    """
+    Generates a comprehensive weight loss journey report for the user, 
+    including personal profile, metabolic calculations, workout analysis, 
+    body composition adjustments, and final results.
+
+    Parameters:
+    progression (list): A list of dictionaries containing the user's weekly progression data.
+    initial_data (dict): A dictionary containing the user's initial information (e.g., name, DOB, gender).
+
+    Returns:
+    str: A formatted report string in markdown format.
+    """
+    # Extract initial and final entries from the progression data
     initial_entry = progression[0]
     final_entry = progression[-1]
     total_weeks = len(progression) - 1
 
+    # Calculate total weight loss and average weekly weight loss
     total_weight_loss = initial_entry['weight'] - final_entry['weight']
     total_bf_loss = initial_entry['body_fat_percentage'] - final_entry['body_fat_percentage']
     avg_weekly_loss = total_weight_loss / total_weeks
+
+    # Calculate total muscle gain and average weekly muscle gain
     total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
-    adaptation_percentage = (1 - final_entry['tdee'] / initial_entry['tdee']) * 100
-    lean_mass_preserved = (final_entry['lean_mass'] / initial_entry['lean_mass']) * 100
     avg_muscle_gain = total_muscle_gain / total_weeks
 
+    # Calculate metabolic adaptation percentage and lean mass preservation percentage
+    adaptation_percentage = (1 - final_entry['tdee'] / initial_entry['tdee']) * 100
+    lean_mass_preserved = (final_entry['lean_mass'] / initial_entry['lean_mass']) * 100
+
+    # Build the body composition changes table
     body_composition_changes = ""
     for entry in progression:
         category, time_to_six_pack, description = get_body_fat_info(initial_data['gender'], entry['body_fat_percentage'])
         entry_date = datetime.datetime.strptime(entry['date'], "%m%d%y").strftime("%m/%d/%Y")
         body_composition_changes += f"| {category:<18} | {entry['body_fat_percentage']:.1f}% | {entry_date} | {description:<40} | {time_to_six_pack:<12} |\n"
 
+    # Format start and end dates
     start_date = datetime.datetime.strptime(initial_entry['date'], "%m%d%y").strftime("%m/%d/%Y")
     end_date = datetime.datetime.strptime(final_entry['date'], "%m%d%y").strftime("%m/%d/%Y")
 
     # Use a default name if 'name' is not provided in initial_data
     user_name = initial_data.get('name', 'User')
 
+    # Create the comprehensive report in markdown format
     report = f"""
 # Your Personalized Weight Loss Journey Report
 
@@ -128,8 +176,8 @@ We've analyzed your data using our advanced weight loss prediction model. Here's
 
 ## 7. Metabolic Adaptation
 
-- Week 1 Metabolic Adaptation: {calculate_metabolic_adaptation(1, initial_entry['body_fat_percentage'], initial_data['is_bodybuilder']):.2f}
-- Final Week Metabolic Adaptation: {calculate_metabolic_adaptation(total_weeks, final_entry['body_fat_percentage'], initial_data['is_bodybuilder']):.2f}
+- Week 1 Metabolic Adaptation: {calculate_metabolic_adaptation(1, initial_entry['body_fat_percentage'], initial_data['is_bodybuilder']): .2f}
+- Final Week Metabolic Adaptation: {calculate_metabolic_adaptation(total_weeks, final_entry['body_fat_percentage'], initial_data['is_bodybuilder']): .2f}
 
 ## 8. Final Results
 
@@ -175,20 +223,33 @@ Remember, this journey is a marathon, not a sprint. Celebrate your progress and 
     return report
 
 def save_report(report, username, save_format):
+    """
+    Saves the generated report in the specified format (Markdown, PDF, or both).
+
+    Parameters:
+    report (str): The comprehensive report string to be saved.
+    username (str): The name of the user to include in the filename.
+    save_format (str): The format in which to save the report ('markdown', 'pdf', 'both').
+
+    Returns:
+    None
+    """
     # Create the 'results' directory if it doesn't exist
     if not os.path.exists(RESULTS_FOLDER):
         os.makedirs(RESULTS_FOLDER)
 
-    # Generate the filename
+    # Generate the filename with a timestamp
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     base_filename = f"{username}_{timestamp}"
 
+    # Save the report as a Markdown file if selected
     if save_format in ['markdown', 'both']:
         markdown_filename = os.path.join(RESULTS_FOLDER, f"{base_filename}.md")
         with open(markdown_filename, 'w') as f:
             f.write(report)
         print(f"Markdown report saved as {markdown_filename}")
 
+    # Save the report as a PDF file if selected
     if save_format in ['pdf', 'both']:
         pdf_filename = os.path.join(RESULTS_FOLDER, f"{base_filename}.pdf")
         html = markdown.markdown(report)
@@ -196,6 +257,7 @@ def save_report(report, username, save_format):
             pdfkit.from_string(html, pdf_filename)
             print(f"PDF report saved as {pdf_filename}")
         except OSError as e:
+            # Handle errors related to PDF generation
             print(f"Error generating PDF: {str(e)}")
             print("\nTo generate PDF reports, please install wkhtmltopdf:")
             print("1. Download from: https://wkhtmltopdf.org/downloads.html")
@@ -204,6 +266,16 @@ def save_report(report, username, save_format):
             print("\nAlternatively, you can use only the markdown option for now.")
 
 def print_summary(progression, initial_data):
+    """
+    Generates and prints a summary report. Optionally, allows the user to save the report in their preferred format.
+
+    Parameters:
+    progression (list): A list of dictionaries containing the user's weekly progression data.
+    initial_data (dict): A dictionary containing the user's initial information (e.g., name, DOB, gender).
+
+    Returns:
+    None
+    """
     report = generate_comprehensive_report(progression, initial_data)
     print(report)
 
@@ -250,3 +322,9 @@ if __name__ == "__main__":
         "is_bodybuilder": True
     }
     print_summary(test_progression, test_initial_data)
+
+# --- Footer ---
+# Status: Development
+# Contact: mambamental3mil@gmail.com
+# © 2024 Mamba Matrix Solutions LLC. All rights reserved.
+# --- End of File ---

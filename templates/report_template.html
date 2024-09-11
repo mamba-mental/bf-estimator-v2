@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Loss Journey Report - {{ name }}</title>
+</head>
+<body>
+    <header>
+        <h1>Weight Loss Journey Report - {{ name }}</h1>
+        <p>Generated on: {{ report_date }}</p>
+    </header>
+
+    <section>
+        <h2>1. Personal Profile</h2>
+        <table>
+            <tr><td>Start Date:</td><td>{{ start_date }}</td><td>End Date:</td><td>{{ end_date }}</td></tr>
+            <tr><td>Age:</td><td>{{ age }} years</td><td>Gender:</td><td>{{ gender }}</td></tr>
+            <tr><td>Height:</td><td>{{ height }}</td><td>Initial Weight:</td><td>{{ initial_weight }} lbs</td></tr>
+            <tr><td>Goal Weight:</td><td>{{ goal_weight }} lbs</td><td>Initial Body Fat:</td><td>{{ initial_body_fat }}%</td></tr>
+            <tr><td>Goal Body Fat:</td><td>{{ goal_body_fat }}%</td><td>Activity Level:</td><td>{{ activity_level }}</td></tr>
+            <tr><td>Experience Level:</td><td>{{ experience_level }}</td><td></td><td></td></tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>2. Metabolic Calculations</h2>
+        <p>These calculations provide insight into your body's energy requirements and how they change over time.</p>
+        <table>
+            <tr><td>Initial RMR:</td><td>{{ initial_rmr }} cal/day</td><td>Initial TDEE:</td><td>{{ initial_tdee }} cal/day</td></tr>
+            <tr><td>TEF:</td><td>{{ tef }} cal/day</td><td>NEAT:</td><td>{{ neat }} cal/day</td></tr>
+            <tr><td>Initial Daily Calorie Intake:</td><td>{{ initial_daily_calorie_intake }} cal/day</td><td></td><td></td></tr>
+        </table>
+        <p><strong>RMR:</strong> Resting Metabolic Rate - calories burned at rest<br>
+           <strong>TDEE:</strong> Total Daily Energy Expenditure - total calories burned per day<br>
+           <strong>TEF:</strong> Thermic Effect of Food - calories burned digesting food<br>
+           <strong>NEAT:</strong> Non-Exercise Activity Thermogenesis - calories burned through daily activities</p>
+    </section>
+
+    <section>
+        <h2>3. Workout Analysis</h2>
+        <p>This analysis provides insight into your workout routine and its effectiveness.</p>
+        <table>
+            <tr><td>Type:</td><td>{{ workout_type }}</td><td>Frequency:</td><td>{{ workout_frequency }} days/week</td></tr>
+            <tr><td>Volume Score:</td><td>{{ volume_score }} - {{ get_score_description(volume_score) }}</td><td>Intensity Score:</td><td>{{ intensity_score }} - {{ get_score_description(intensity_score) }}</td></tr>
+            <tr><td>Frequency Score:</td><td>{{ frequency_score }} - {{ get_score_description(frequency_score) }}</td><td>Resistance Training:</td><td>{{ resistance_training }}</td></tr>
+            <tr><td>Athlete Status:</td><td>{{ athlete_status }}</td><td></td><td></td></tr>
+        </table>
+        <p><strong>Volume Score:</strong> Measures the total amount of work done in your workouts<br>
+           <strong>Intensity Score:</strong> Indicates how hard you're working during your workouts<br>
+           <strong>Frequency Score:</strong> Reflects how often you're training each muscle group</p>
+    </section>
+
+    <section>
+        <h2>4. Body Composition Adjustments</h2>
+        <p>This section shows how your body composition changed throughout your journey.</p>
+        <table>
+            <tr>
+                <td>Initial Lean Mass:</td><td>{{ initial_lean_mass }} lbs</td>
+                <td>Initial Fat Mass:</td><td>{{ initial_fat_mass }} lbs</td>
+                <td>Est. Weekly Muscle Gain:</td><td>{{ weekly_muscle_gain }} lbs</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>5. Weekly Progress Forecast</h2>
+        <p>This chart and table show your projected weight loss and body composition changes week by week.</p>
+        <img src="data:image/png;base64,{{ weight_progress_chart }}" alt="Weight Progress Chart">
+        <table class="small-table">
+            <tr>
+                <th>Date</th>
+                <th>Weight (lbs)</th>
+                <th>Body Fat %</th>
+                <th>Daily Cal Intake</th>
+                <th>TDEE</th>
+                <th>Weekly Cal Output</th>
+                <th>Total Weight Lost (lbs)</th>
+                <th>Lean Mass (lbs)</th>
+                <th>Fat Mass (lbs)</th>
+                <th>Muscle Gain (lbs)</th>
+                <th>RMR</th>
+            </tr>
+            {% for week in weekly_progress %}
+            <tr>
+                <td>{{ week.date }}</td>
+                <td>{{ "%.1f"|format(week.weight) }}</td>
+                <td>{{ "%.1f"|format(week.body_fat_percentage) }}</td>
+                <td>{{ "%.0f"|format(week.daily_calorie_intake) }}</td>
+                <td>{{ "%.0f"|format(week.tdee) }}</td>
+                <td>{{ "%.0f"|format(week.weekly_caloric_output) }}</td>
+                <td>{{ "%.1f"|format(week.total_weight_lost) }}</td>
+                <td>{{ "%.1f"|format(week.lean_mass) }}</td>
+                <td>{{ "%.1f"|format(week.fat_mass) }}</td>
+                <td>{{ "%.1f"|format(week.muscle_gain) }}</td>
+                <td>{{ "%.0f"|format(week.rmr) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </section>
+
+    <section>
+        <h2>6. Body Composition Changes Over Time</h2>
+        <p>This chart and table illustrate how your body fat percentage changed throughout your journey.</p>
+        <img src="data:image/png;base64,{{ body_composition_chart }}" alt="Body Composition Chart">
+        <table class="small-table">
+            <tr>
+                <th>Body Fat Category</th>
+                <th>Body Fat %</th>
+                <th>Date Reached</th>
+                <th>Description</th>
+                <th>Est. Time to Six-Pack</th>
+            </tr>
+            {% for change in body_composition_changes %}
+            <tr>
+                <td>{{ change.category }}</td>
+                <td>{{ "%.1f"|format(change.body_fat_percentage) }}%</td>
+                <td>{{ change.date_reached }}</td>
+                <td>{{ change.description }}</td>
+                <td>{{ change.time_to_six_pack }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </section>
+
+    <section>
+        <h2>7. Metabolic Adaptation</h2>
+        <p>This shows how your metabolism adjusted throughout your weight loss journey.</p>
+        <table>
+            <tr>
+                <td>Week 1 Metabolic Adaptation:</td>
+                <td>{{ "%.2f"|format(week_1_adaptation) }}</td>
+            </tr>
+            <tr>
+                <td>Final Week Metabolic Adaptation:</td>
+                <td>{{ "%.2f"|format(final_week_adaptation) }}</td>
+            </tr>
+        </table>
+        <p>A value of 1.00 indicates no adaptation, while lower values indicate metabolic slowdown.</p>
+    </section>
+
+    <section>
+        <h2>8. Final Results</h2>
+        <p>This summary shows your overall progress and achievements.</p>
+        <table>
+            <tr>
+                <td>Duration:</td><td>{{ total_weeks }} weeks</td>
+                <td>Total Weight Loss:</td><td>{{ "%.1f"|format(total_weight_loss) }} lbs</td>
+            </tr>
+            <tr>
+                <td>Total Body Fat Reduction:</td><td>{{ "%.1f"|format(total_bf_loss) }}%</td>
+                <td>Final Weight:</td><td>{{ "%.1f"|format(final_weight) }} lbs</td>
+            </tr>
+            <tr>
+                <td>Final Body Fat:</td><td>{{ "%.1f"|format(final_body_fat) }}%</td>
+                <td>Average Weekly Weight Loss:</td><td>{{ "%.1f"|format(avg_weekly_loss) }} lbs</td>
+            </tr>
+            <tr>
+                <td>Total Muscle Gain:</td><td>{{ "%.1f"|format(total_muscle_gain) }} lbs</td>
+                <td>Final Daily Calorie Intake:</td><td>{{ "%.0f"|format(final_daily_calorie_intake) }} calories</td>
+            </tr>
+            <tr>
+                <td>Final TDEE:</td><td>{{ "%.0f"|format(final_tdee) }} calories</td>
+                <td>Final Weekly Caloric Output:</td><td>{{ "%.0f"|format(final_weekly_caloric_output) }} calories</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>9. Body Fat Category Progression</h2>
+        <p>This shows how your body fat category changed from the beginning to the end of your journey.</p>
+        <table>
+            <tr>
+                <th>Stage</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Est. Time to Six-Pack</th>
+            </tr>
+            <tr>
+                <td>Initial</td>
+                <td>{{ initial_body_fat_category }}</td>
+                <td>{{ initial_body_fat_description }}</td>
+                <td>{{ initial_time_to_six_pack }}</td>
+            </tr>
+            <tr>
+                <td>Final</td>
+                <td>{{ final_body_fat_category }}</td>
+                <td>{{ final_body_fat_description }}</td>
+                <td>{{ final_time_to_six_pack }}</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>10. Insights and Recommendations</h2>
+        <ul>
+            <li>Your metabolic rate adapted by {{ "%.1f"|format(adaptation_percentage) }}% over the course of your journey.</li>
+            <li>You maintained {{ "%.1f"|format(lean_mass_preserved) }}% of your initial lean mass.</li>
+            <li>Your muscle gain rate averaged {{ "%.1f"|format(avg_muscle_gain) }} lbs per week.</li>
+            <li>Based on your final body fat percentage, you're now in the {{ final_body_fat_category }} category.</li>
+            <li>To maintain your results, consider a daily calorie intake of {{ "%.0f"|format(final_tdee) }} calories.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>11. Future Considerations</h2>
+        <p>This section is reserved for future personalized recommendations and long-term strategy planning.</p>
+    </section>
+</body>
+</html>

@@ -1,40 +1,330 @@
-# --- Beginning of File ---
-# report_generation.py
-# Author: Tiran Ronelle Winston
-# Created: September 10, 2024
-# Last Modified: September 10, 2024
-# Description: This script generates a comprehensive report on an individual's weight loss journey. 
-#              It includes details such as body composition changes, metabolic adaptations, and workout analysis.
-# Usage: This script can be executed directly to generate a report based on provided progression data and initial parameters.
-# Dependencies: tabulate, calculations (local module), utils (local module), datetime, os, markdown, pdfkit
-# Version: 1.0.0
-# License: Apache License 2.0
-# --- End of Header ---
-
-from tabulate import tabulate
-from calculations import calculate_metabolic_adaptation
-from utils import calculate_age, estimate_tef, estimate_neat
-import datetime
 import os
-import markdown
-import pdfkit
+import datetime
+import base64
+import io
+import matplotlib.pyplot as plt
+from weasyprint import HTML, CSS
+from jinja2 import Environment, FileSystemLoader
 
-# Define the correct path for the results folder
-RESULTS_FOLDER = r"C:\Code_Projects\bf-estimator-v2\results"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+RESULTS_FOLDER = os.path.join(SCRIPT_DIR, "results")
+TEMPLATE_FOLDER = os.path.join(SCRIPT_DIR, "templates")
+CSS_FILE = os.path.join(SCRIPT_DIR, "styles", "report_style.css")
+
+def save_report(report_data, username, save_format):
+    if not os.path.exists(RESULTS_FOLDER):
+        os.makedirs(RESULTS_FOLDER)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_filename = f"{username}_{timestamp}"
+    
+    if save_format in ['markdown', 'both']:
+        markdown_filename = os.path.join(RESULTS_FOLDER, f"{base_filename}.md")
+        with open(markdown_filename, 'w') as f:
+            f.write(generate_markdown(report_data))
+        print(f"Markdown report saved as {markdown_filename}")
+
+    if save_format in ['pdf', 'both']:
+        pdf_filename = os.path.join(RESULTS_FOLDER, f"{base_filename}.pdf")
+        try:
+            html_content = generate_html(report_data)
+            HTML(string=html_content).write_pdf(pdf_filename, stylesheets=[CSS(filename=CSS_FILE)])
+            print(f"PDF report saved as {pdf_filename}")
+        except Exception as e:
+            print(f"Error generating PDF: {str(e)}")
+
+def generate_markdown(report_data):
+    markdown = f"""# Your Personalized Weight Loss Journey Report
+
+Generated on: {report_data['report_date']}
+
+## 1. Personal Profile
+
+- Start Date: {report_data['start_date']}
+- End Date: {report_data['end_date']}
+- Age: {report_data['age']} years
+- Gender: {report_data['gender']}
+- Height: {report_data['height']}
+- Initial Weight: {report_data['initial_weight']} lbs
+- Goal Weight: {report_data['goal_weight']} lbs
+- Initial Body Fat: {report_data['initial_body_fat']}%
+- Goal Body Fat: {report_data['goal_body_fat']}%
+- Activity Level: {report_data['activity_level']}
+- Experience Level: {report_data['experience_level']}
+
+## 2. Metabolic Calculations
+
+- Initial RMR: {report_data['initial_rmr']} cal/day
+- Initial TDEE: {report_data['initial_tdee']} cal/day
+- TEF: {report_data['tef']} cal/day
+- NEAT: {report_data['neat']} cal/day
+- Initial Daily Calorie Intake: {report_data['initial_daily_calorie_intake']} cal/day
+
+## 3. Workout Analysis
+
+- Type: {report_data['workout_type']}
+- Frequency: {report_data['workout_frequency']}
+- Volume Score: {report_data['volume_score']}
+- Intensity Score: {report_data['intensity_score']}
+- Frequency Score: {report_data['frequency_score']}
+- Resistance Training: {report_data['resistance_training']}
+- Athlete Status: {report_data['athlete_status']}
+
+## 4. Body Composition Adjustments
+
+- Initial Lean Mass: {report_data['initial_lean_mass']} lbs
+- Initial Fat Mass: {report_data['initial_fat_mass']} lbs
+- Est. Weekly Muscle Gain: {report_data['weekly_muscle_gain']} lbs
+
+## 5. Weekly Progress Forecast
+
+(Chart not available in Markdown format)
+
+## 6. Body Composition Changes Over Time
+
+(Chart not available in Markdown format)
+
+## 7. Metabolic Adaptation
+
+- Week 1 Metabolic Adaptation: {report_data['week_1_adaptation']}
+- Final Week Metabolic Adaptation: {report_data['final_week_adaptation']}
+
+## 8. Final Results
+
+- Duration: {report_data['total_weeks']} weeks
+- Total Weight Loss: {report_data['total_weight_loss']} lbs
+- Total Body Fat Reduction: {report_data['total_bf_loss']}%
+- Final Weight: {report_data['final_weight']} lbs
+- Final Body Fat: {report_data['final_body_fat']}%
+- Average Weekly Weight Loss: {report_data['avg_weekly_loss']} lbs
+- Total Muscle Gain: {report_data['total_muscle_gain']} lbs
+- Final Daily Calorie Intake: {report_data['final_daily_calorie_intake']} calories
+- Final TDEE: {report_data['final_tdee']} calories
+- Final Weekly Caloric Output: {report_data['final_weekly_caloric_output']} calories
+
+## 9. Body Fat Category Progression
+
+- Initial: {report_data['initial_body_fat_category']}
+  - Description: {report_data['initial_body_fat_description']}
+  - Est. Time to Six-Pack: {report_data['initial_time_to_six_pack']}
+- Final: {report_data['final_body_fat_category']}
+  - Description: {report_data['final_body_fat_description']}
+  - Est. Time to Six-Pack: {report_data['final_time_to_six_pack']}
+
+## 10. Insights and Recommendations
+
+- Your metabolic rate adapted by {report_data['adaptation_percentage']}% over the course of your journey.
+- You maintained {report_data['lean_mass_preserved']}% of your initial lean mass.
+- Your muscle gain rate averaged {report_data['avg_muscle_gain']} lbs per week.
+- Based on your final body fat percentage, you're now in the {report_data['final_body_fat_category']} category.
+- To maintain your results, consider a daily calorie intake of {report_data['final_tdee']} calories.
+
+## 11. Next Steps
+
+- Continue with your current plan.
+- Consider adjusting your protein intake to support lean mass.
+- Your next ideal body composition goal could be a lower body fat percentage.
+"""
+    return markdown
+
+def generate_html(report_data):
+    env = Environment(loader=FileSystemLoader(TEMPLATE_FOLDER))
+    
+    # Add the get_score_description function to the template environment
+    env.globals['get_score_description'] = get_score_description
+    
+    template = env.get_template('report_template.html')
+    
+    # Generate charts
+    report_data['weight_progress_chart'] = generate_weight_progress_chart(report_data['weekly_progress'])
+    report_data['body_composition_chart'] = generate_body_composition_chart(report_data['body_composition_changes'])
+    
+    return template.render(report_data)
+
+
+def generate_weight_progress_chart(weekly_progress):
+    dates = [datetime.datetime.strptime(week['date'], '%m%d%y') for week in weekly_progress]
+    weights = [week['weight'] for week in weekly_progress]
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(dates, weights, marker='o')
+    plt.title('Weight Progress')
+    plt.xlabel('Date')
+    plt.ylabel('Weight (lbs)')
+    plt.grid(True)
+    
+    img_buffer = io.BytesIO()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    return base64.b64encode(img_buffer.getvalue()).decode()
+
+def generate_body_composition_chart(body_composition_changes):
+    dates = [datetime.datetime.strptime(change['date_reached'], '%m/%d/%Y') for change in body_composition_changes]
+    body_fat_percentages = [change['body_fat_percentage'] for change in body_composition_changes]
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(dates, body_fat_percentages, marker='o')
+    plt.title('Body Composition Changes')
+    plt.xlabel('Date')
+    plt.ylabel('Body Fat Percentage')
+    plt.grid(True)
+    
+    img_buffer = io.BytesIO()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    return base64.b64encode(img_buffer.getvalue()).decode()
+
+
+def print_summary(progression, initial_data):
+    report_data = generate_comprehensive_report(progression, initial_data)
+    
+    print("\nWeight Loss Journey Summary:")
+    print(f"Initial Weight: {report_data['initial_weight']:.1f} lbs")
+    print(f"Final Weight: {report_data['final_weight']:.1f} lbs")
+    print(f"Total Weight Loss: {report_data['total_weight_loss']:.1f} lbs")
+    print(f"Initial Body Fat: {report_data['initial_body_fat']:.1f}%")
+    print(f"Final Body Fat: {report_data['final_body_fat']:.1f}%")
+    print(f"Total Body Fat Reduction: {report_data['total_bf_loss']:.1f}%")
+    print(f"Total Muscle Gain: {report_data['total_muscle_gain']:.1f} lbs")
+    
+    save_option = input("\nDo you want to save the detailed report? (y/n): ").lower()
+    if save_option == 'y':
+        save_format = input("Choose the format to save (markdown/pdf/both): ").lower()
+        if save_format in ['markdown', 'pdf', 'both']:
+            save_report(report_data, initial_data.get('name', 'User'), save_format)
+        else:
+            print("Invalid format choice. Report will not be saved.")
+    else:
+        print("Report will not be saved.")
+
+def generate_comprehensive_report(progression, initial_data):
+    report_data = {
+        'name': initial_data['name'],
+        'report_date': datetime.datetime.now().strftime("%m/%d/%Y"),
+        'start_date': datetime.datetime.strptime(progression[0]['date'], "%m%d%y").strftime("%m/%d/%Y"),
+        'end_date': datetime.datetime.strptime(progression[-1]['date'], "%m%d%y").strftime("%m/%d/%Y"),
+        'age': calculate_age(initial_data['dob'], datetime.datetime.strptime(progression[0]['date'], "%m%d%y")),
+        'gender': 'Male' if initial_data['gender'].lower() == 'm' else 'Female',
+        'height': f"{initial_data['height_feet']}'{'0' if initial_data['height_inches'] == 0 else initial_data['height_inches']}\" ({initial_data['height_cm']:.1f} cm)",
+        'initial_weight': progression[0]['weight'],
+        'final_weight': progression[-1]['weight'],
+        'goal_weight': initial_data['goal_weight'],
+        'initial_body_fat': progression[0]['body_fat_percentage'],
+        'final_body_fat': progression[-1]['body_fat_percentage'],
+        'goal_body_fat': initial_data['goal_bf'],
+        'activity_level': initial_data['activity_level_description'],
+        'experience_level': initial_data['experience_level'],
+        'initial_rmr': progression[0]['rmr'],
+        'initial_tdee': progression[0]['tdee'],
+        'tef': initial_data.get('tef', calculate_tef(initial_data['protein_intake'])),
+        'neat': initial_data.get('neat', calculate_neat(initial_data['job_activity'], initial_data['leisure_activity'])),
+        'initial_daily_calorie_intake': progression[0]['daily_calorie_intake'],
+        'workout_type': get_workout_type_description(initial_data['workout_type']),
+        'workout_frequency': initial_data['workout_days'],
+        'volume_score': initial_data['volume_score'],
+        'intensity_score': initial_data['intensity_score'],
+        'frequency_score': initial_data['frequency_score'],
+        'resistance_training': 'Yes' if initial_data['resistance_training'] else 'No',
+        'athlete_status': 'Yes' if initial_data['is_athlete'] else 'No',
+        'initial_lean_mass': progression[0]['lean_mass'],
+        'initial_fat_mass': progression[0]['fat_mass'],
+        'weekly_muscle_gain': sum(week['muscle_gain'] for week in progression) / len(progression),
+        'weekly_progress': [
+            {**week, 'date': datetime.datetime.strptime(week['date'], "%m%d%y").strftime("%m/%d/%Y")}
+            for week in progression
+        ],
+        'body_composition_changes': [
+            {**change, 'date_reached': datetime.datetime.strptime(change['date_reached'], "%m/%d/%Y").strftime("%m/%d/%Y")}
+            for change in initial_data.get('body_composition_changes', [])
+        ],
+        'week_1_adaptation': 1.0,
+        'final_week_adaptation': progression[-1]['tdee'] / progression[0]['tdee'],
+        'total_weeks': len(progression) - 1,
+        'total_weight_loss': progression[0]['weight'] - progression[-1]['weight'],
+        'total_bf_loss': progression[0]['body_fat_percentage'] - progression[-1]['body_fat_percentage'],
+        'avg_weekly_loss': (progression[0]['weight'] - progression[-1]['weight']) / (len(progression) - 1),
+        'total_muscle_gain': sum(week['muscle_gain'] for week in progression),
+        'final_daily_calorie_intake': progression[-1]['daily_calorie_intake'],
+        'final_tdee': progression[-1]['tdee'],
+        'final_weekly_caloric_output': progression[-1]['weekly_caloric_output'],
+    }
+    
+    # Add body fat category information
+    initial_bf_info = get_body_fat_info(initial_data['gender'], progression[0]['body_fat_percentage'])
+    final_bf_info = get_body_fat_info(initial_data['gender'], progression[-1]['body_fat_percentage'])
+    
+    report_data.update({
+        'initial_body_fat_category': initial_bf_info[0],
+        'initial_body_fat_description': initial_bf_info[2],
+        'initial_time_to_six_pack': initial_bf_info[1],
+        'final_body_fat_category': final_bf_info[0],
+        'final_body_fat_description': final_bf_info[2],
+        'final_time_to_six_pack': final_bf_info[1],
+        'adaptation_percentage': (1 - (progression[-1]['tdee'] / progression[0]['tdee'])) * 100,
+        'lean_mass_preserved': (progression[-1]['lean_mass'] / progression[0]['lean_mass']) * 100,
+        'avg_muscle_gain': sum(week['muscle_gain'] for week in progression) / (len(progression) - 1),
+    })
+
+    # Ensure body_composition_changes is populated
+    report_data['body_composition_changes'] = []
+    for week in progression:
+        bf_info = get_body_fat_info(initial_data['gender'], week['body_fat_percentage'])
+        report_data['body_composition_changes'].append({
+            'category': bf_info[0],
+            'body_fat_percentage': week['body_fat_percentage'],
+            'date_reached': datetime.datetime.strptime(week['date'], "%m%d%y").strftime("%m/%d/%Y"),
+            'description': bf_info[2],
+            'time_to_six_pack': bf_info[1]
+        })
+
+    # Generate charts
+    report_data['weight_progress_chart'] = generate_weight_progress_chart(report_data['weekly_progress'])
+    report_data['body_composition_chart'] = generate_body_composition_chart(report_data['body_composition_changes'])
+
+    # Round all float values to one decimal place
+    for key, value in report_data.items():
+        if isinstance(value, float):
+            report_data[key] = round(value, 1)
+
+    return report_data
+
+def calculate_age(birth_date, start_date):
+    return start_date.year - birth_date.year - ((start_date.month, start_date.day) < (birth_date.month, birth_date.day))
+
+def calculate_tef(protein_intake):
+    # Placeholder function, replace with actual calculation
+    return protein_intake * 0.1
+
+def calculate_neat(job_activity, leisure_activity):
+    # Placeholder function, replace with actual calculation
+    activity_levels = {'sedentary': 1, 'light': 2, 'moderate': 3, 'active': 4}
+    return (activity_levels[job_activity] + activity_levels[leisure_activity]) * 50
+
+def get_workout_type_description(workout_type):
+    descriptions = {
+        1: "Bodybuilding (focus on muscle hypertrophy)",
+        2: "Strength Training (focus on increasing maximal strength)",
+        3: "Powerlifting (focus on squat, bench press, and deadlift)",
+        4: "Olympic Weightlifting (focus on snatch and clean & jerk)",
+        5: "Crossfit (high-intensity functional training)",
+        6: "Calisthenics (bodyweight exercises)",
+        7: "General Fitness (balanced approach to overall health and fitness)"
+    }
+    return descriptions.get(workout_type, "Custom workout plan")
+
+def get_score_description(score):
+    if score < 0.2:
+        return "Very Low"
+    elif score < 0.4:
+        return "Low"
+    elif score < 0.6:
+        return "Moderate"
+    elif score < 0.8:
+        return "High"
+    else:
+        return "Very High"
 
 def get_body_fat_info(gender, body_fat_percentage):
-    """
-    Determines the body fat category, estimated time to achieve six-pack abs, 
-    and description based on the user's gender and body fat percentage.
-
-    Parameters:
-    gender (str): Gender of the user ('m' for male, 'f' for female).
-    body_fat_percentage (float): Current body fat percentage of the user.
-
-    Returns:
-    tuple: A tuple containing the body fat category name, estimated time to 
-           achieve six-pack abs, and a brief description of the physical condition.
-    """
     categories = [
         {"name": "Very Lean", "men": 10, "women": 18, "time": "3-4 weeks", "description": "Visible abs, vascularity, striations"},
         {"name": "Lean", "men": 14, "women": 22, "time": "2-3 months", "description": "Some muscle definition, less visible abs"},
@@ -44,253 +334,46 @@ def get_body_fat_info(gender, body_fat_percentage):
         {"name": "Obese", "men": float('inf'), "women": float('inf'), "time": "12+ months", "description": "Significant excess fat all around"}
     ]
 
-    # Determine the threshold key based on gender
     threshold_key = "men" if gender.lower() == 'm' else "women"
 
-    # Iterate through categories to find the appropriate one
     for category in categories:
         if body_fat_percentage < category[threshold_key]:
             return category["name"], category["time"], category["description"]
 
-    # Return the last category if no other category is matched
     return categories[-1]["name"], categories[-1]["time"], categories[-1]["description"]
 
-def generate_comprehensive_report(progression, initial_data):
-    """
-    Generates a comprehensive weight loss journey report for the user, 
-    including personal profile, metabolic calculations, workout analysis, 
-    body composition adjustments, and final results.
+def generate_weight_progress_chart(weekly_progress):
+    dates = [datetime.datetime.strptime(week['date'], "%m/%d/%Y") for week in weekly_progress]
+    weights = [week['weight'] for week in weekly_progress]
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(dates, weights, marker='o')
+    plt.title('Weight Progress')
+    plt.xlabel('Date')
+    plt.ylabel('Weight (lbs)')
+    plt.grid(True)
+    
+    img_buffer = io.BytesIO()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    return base64.b64encode(img_buffer.getvalue()).decode()
 
-    Parameters:
-    progression (list): A list of dictionaries containing the user's weekly progression data.
-    initial_data (dict): A dictionary containing the user's initial information (e.g., name, DOB, gender).
+def generate_body_composition_chart(body_composition_changes):
+    dates = [datetime.datetime.strptime(change['date_reached'], "%m/%d/%Y") for change in body_composition_changes]
+    body_fat_percentages = [change['body_fat_percentage'] for change in body_composition_changes]
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(dates, body_fat_percentages, marker='o')
+    plt.title('Body Composition Changes')
+    plt.xlabel('Date')
+    plt.ylabel('Body Fat Percentage')
+    plt.grid(True)
+    
+    img_buffer = io.BytesIO()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    return base64.b64encode(img_buffer.getvalue()).decode()
 
-    Returns:
-    str: A formatted report string in markdown format.
-    """
-    # Extract initial and final entries from the progression data
-    initial_entry = progression[0]
-    final_entry = progression[-1]
-    total_weeks = len(progression) - 1
-
-    # Calculate total weight loss and average weekly weight loss
-    total_weight_loss = initial_entry['weight'] - final_entry['weight']
-    total_bf_loss = initial_entry['body_fat_percentage'] - final_entry['body_fat_percentage']
-    avg_weekly_loss = total_weight_loss / total_weeks
-
-    # Calculate total muscle gain and average weekly muscle gain
-    total_muscle_gain = sum(entry['muscle_gain'] for entry in progression)
-    avg_muscle_gain = total_muscle_gain / total_weeks
-
-    # Calculate metabolic adaptation percentage and lean mass preservation percentage
-    adaptation_percentage = (1 - final_entry['tdee'] / initial_entry['tdee']) * 100
-    lean_mass_preserved = (final_entry['lean_mass'] / initial_entry['lean_mass']) * 100
-
-    # Build the body composition changes table
-    body_composition_changes = ""
-    for entry in progression:
-        category, time_to_six_pack, description = get_body_fat_info(initial_data['gender'], entry['body_fat_percentage'])
-        entry_date = datetime.datetime.strptime(entry['date'], "%m%d%y").strftime("%m/%d/%Y")
-        body_composition_changes += f"| {category:<18} | {entry['body_fat_percentage']:.1f}% | {entry_date} | {description:<40} | {time_to_six_pack:<12} |\n"
-
-    # Format start and end dates
-    start_date = datetime.datetime.strptime(initial_entry['date'], "%m%d%y").strftime("%m/%d/%Y")
-    end_date = datetime.datetime.strptime(final_entry['date'], "%m%d%y").strftime("%m/%d/%Y")
-
-    # Use a default name if 'name' is not provided in initial_data
-    user_name = initial_data.get('name', 'User')
-
-    # Create the comprehensive report in markdown format
-    report = f"""
-# Your Personalized Weight Loss Journey Report
-
-Dear {user_name},
-
-We've analyzed your data using our advanced weight loss prediction model. Here's a comprehensive breakdown of your journey:
-
-## 1. Personal Profile
-
-- Start Date: {start_date}  
-- End Date: {end_date}
-- Age: {calculate_age(initial_data['dob'], datetime.datetime.strptime(initial_entry['date'], "%m%d%y"))} years
-- Gender: {'Male' if initial_data['gender'].lower() == 'm' else 'Female'}
-- Height: {initial_data['height_feet']}'{"" if initial_data['height_inches'] == 0 else initial_data['height_inches']}" ({initial_data['height_cm']:.1f} cm)
-- Initial Weight: {initial_entry['weight']:.1f} lbs 
-- Goal Weight: {initial_data['goal_weight']:.1f} lbs
-- Initial Body Fat: {initial_entry['body_fat_percentage']:.1f}%
-- Goal Body Fat: {initial_data['goal_bf']:.1f}%  
-- Activity Level: {initial_data['activity_level_description']}
-- Experience Level: {initial_data['experience_level']} 
-
-## 2. Metabolic Calculations
-
-- Initial Resting Metabolic Rate (RMR): {initial_entry['rmr']:.0f} calories/day
-- Initial Total Daily Energy Expenditure (TDEE): {initial_entry['tdee']:.0f} calories/day
-- Thermic Effect of Food (TEF): {estimate_tef(initial_data['protein_intake']):.0f} calories/day
-- Non-Exercise Activity Thermogenesis (NEAT): {estimate_neat(initial_data['job_activity'], initial_data['leisure_activity']):.0f} calories/day
-- Initial Daily Calorie Intake: {initial_entry['daily_calorie_intake']:.0f} calories/day
-
-## 3. Workout Analysis
-
-- Workout Type: {initial_data['workout_type']}
-- Workout Frequency: {initial_data['workout_days']} days/week
-- Volume Score: {initial_data['volume_score']:.2f}
-  - 0.57 - Moderate volume, in the 40-60th percentile
-  - 0.00 to 0.20 - Very low
-  - 0.21 to 0.40 - Low  
-  - 0.41 to 0.60 - Moderate
-  - 0.61 to 0.80 - High
-  - 0.81 to 1.00 - Very high
-- Intensity Score: {initial_data['intensity_score']:.2f}
-  - 0.80 - High intensity, working close to failure
-  - 0.00 to 0.20 - Very low 
-  - 0.21 to 0.40 - Low
-  - 0.41 to 0.60 - Moderate
-  - 0.61 to 0.80 - High
-  - 0.81 to 1.00 - Very high  
-- Frequency Score: {initial_data['frequency_score']:.2f}
-  - 1.00 - Optimal frequency, training each muscle 2-3x per week
-  - 0.00 to 0.20 - Very low
-  - 0.21 to 0.40 - Low
-  - 0.41 to 0.60 - Moderate
-  - 0.61 to 0.80 - High 
-  - 0.81 to 1.00 - Optimal
-- Resistance Training: {'Yes' if initial_data['resistance_training'] else 'No'}
-- Athlete Status: {'Yes' if initial_data['is_athlete'] else 'No'}
-
-## 4. Body Composition Adjustments
-
-- Initial Lean Mass: {initial_entry['lean_mass']:.1f} lbs
-- Initial Fat Mass: {initial_entry['fat_mass']:.1f} lbs  
-- Estimated Weekly Muscle Gain: {avg_muscle_gain:.3f} lbs
-
-## 5. Weekly Progress Forecast
-
-{tabulate(progression, headers="keys", tablefmt="pipe")}
-
-## 6. Body Composition Changes Over Time
-
-| Body Fat Category | Body Fat % | Date Reached | Description | Est. Time to Six-Pack |
-|-------------------|------------|--------------|-------------|----------------------|
-{body_composition_changes}
-
-## 7. Metabolic Adaptation
-
-- Week 1 Metabolic Adaptation: {calculate_metabolic_adaptation(1, initial_entry['body_fat_percentage'], initial_data['is_bodybuilder']): .2f}
-- Final Week Metabolic Adaptation: {calculate_metabolic_adaptation(total_weeks, final_entry['body_fat_percentage'], initial_data['is_bodybuilder']): .2f}
-
-## 8. Final Results
-
-- Duration: {total_weeks} weeks
-- Total Weight Loss: {total_weight_loss:.1f} lbs
-- Total Body Fat Reduction: {total_bf_loss:.1f}%
-- Final Weight: {final_entry['weight']:.1f} lbs 
-- Final Body Fat: {final_entry['body_fat_percentage']:.1f}%
-- Average Weekly Weight Loss: {avg_weekly_loss:.2f} lbs
-- Total Muscle Gain: {total_muscle_gain:.1f} lbs 
-- Final Daily Calorie Intake: {final_entry['daily_calorie_intake']:.0f} calories
-- Final TDEE: {final_entry['tdee']:.0f} calories
-- Final Weekly Caloric Output: {final_entry['weekly_caloric_output']:.1f} calories
-
-## 9. Body Fat Category Progression
-
-- Initial Category: {get_body_fat_info(initial_data['gender'], initial_entry['body_fat_percentage'])[0]}
-   - Description: {get_body_fat_info(initial_data['gender'], initial_entry['body_fat_percentage'])[2]} 
-   - Estimated Time to Six-Pack: {get_body_fat_info(initial_data['gender'], initial_entry['body_fat_percentage'])[1]}
-
-- Final Category: {get_body_fat_info(initial_data['gender'], final_entry['body_fat_percentage'])[0]} 
-   - Description: {get_body_fat_info(initial_data['gender'], final_entry['body_fat_percentage'])[2]}
-   - Estimated Time to Six-Pack: {get_body_fat_info(initial_data['gender'], final_entry['body_fat_percentage'])[1]}
-
-## 10. Insights and Recommendations
-
-- Your metabolic rate adapted by {adaptation_percentage:.1f}% over the course of your journey.
-- You maintained an impressive {lean_mass_preserved:.1f}% of your initial lean mass.  
-- Your muscle gain rate averaged {avg_muscle_gain:.3f} lbs per week, which is {'excellent' if avg_muscle_gain > 0.5 else 'good' if avg_muscle_gain > 0.25 else 'moderate'}.
-- Based on your final body fat percentage, you're now in the {get_body_fat_info(initial_data['gender'], final_entry['body_fat_percentage'])[0]} category.
-- To maintain your results, consider a daily calorie intake of {final_entry['tdee']:.0f} calories.
-
-## 11. Next Steps
-
-- {'Continue with your current plan.' if final_entry['body_fat_percentage'] > initial_data['goal_bf'] else 'Consider a muscle building phase to further improve body composition.'}
-- Consider adjusting your protein intake to {final_entry['weight'] * 0.8:.0f} g/day to support lean mass.
-- Your next ideal body composition goal could be {max(final_entry['body_fat_percentage'] - 2, 5):.1f}% body fat.  
-
-Remember, this journey is a marathon, not a sprint. Celebrate your progress and stay committed to your health and fitness goals!
-
-*Powered by Advanced AI Analytics*
-"""
-    return report
-
-def save_report(report, username, save_format):
-    """
-    Saves the generated report in the specified format (Markdown, PDF, or both).
-
-    Parameters:
-    report (str): The comprehensive report string to be saved.
-    username (str): The name of the user to include in the filename.
-    save_format (str): The format in which to save the report ('markdown', 'pdf', 'both').
-
-    Returns:
-    None
-    """
-    # Create the 'results' directory if it doesn't exist
-    if not os.path.exists(RESULTS_FOLDER):
-        os.makedirs(RESULTS_FOLDER)
-
-    # Generate the filename with a timestamp
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_filename = f"{username}_{timestamp}"
-
-    # Save the report as a Markdown file if selected
-    if save_format in ['markdown', 'both']:
-        markdown_filename = os.path.join(RESULTS_FOLDER, f"{base_filename}.md")
-        with open(markdown_filename, 'w') as f:
-            f.write(report)
-        print(f"Markdown report saved as {markdown_filename}")
-
-    # Save the report as a PDF file if selected
-    if save_format in ['pdf', 'both']:
-        pdf_filename = os.path.join(RESULTS_FOLDER, f"{base_filename}.pdf")
-        html = markdown.markdown(report)
-        try:
-            pdfkit.from_string(html, pdf_filename)
-            print(f"PDF report saved as {pdf_filename}")
-        except OSError as e:
-            # Handle errors related to PDF generation
-            print(f"Error generating PDF: {str(e)}")
-            print("\nTo generate PDF reports, please install wkhtmltopdf:")
-            print("1. Download from: https://wkhtmltopdf.org/downloads.html")
-            print("2. Install and add the installation directory to your system PATH")
-            print("3. Restart your application and try again")
-            print("\nAlternatively, you can use only the markdown option for now.")
-
-def print_summary(progression, initial_data):
-    """
-    Generates and prints a summary report. Optionally, allows the user to save the report in their preferred format.
-
-    Parameters:
-    progression (list): A list of dictionaries containing the user's weekly progression data.
-    initial_data (dict): A dictionary containing the user's initial information (e.g., name, DOB, gender).
-
-    Returns:
-    None
-    """
-    report = generate_comprehensive_report(progression, initial_data)
-    print(report)
-
-    # Ask user for save preferences
-    save_option = input("Do you want to save the report? (y/n): ").lower()
-    if save_option == 'y':
-        while True:
-            save_format = input("Choose the format to save (markdown/pdf/both): ").lower()
-            if save_format in ['markdown', 'pdf', 'both']:
-                save_report(report, initial_data.get('name', 'User'), save_format)
-                break
-            else:
-                print("Invalid format choice. Please enter 'markdown', 'pdf', or 'both'.")
-    else:
-        print("Report will not be saved.")
 
 if __name__ == "__main__":
     # This block is for testing purposes only

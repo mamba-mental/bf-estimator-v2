@@ -1,0 +1,28 @@
+# Core Python libraries
+datetime
+
+# Data processing and analysis
+numpy
+pandas
+
+# Plotting and visualization
+matplotlib
+
+# Web framework and templating
+Flask
+Jinja2
+
+# PDF generation
+WeasyPrint
+pdfkit
+
+# Markdown processing
+mistune
+
+# HTML parsing (used by WeasyPrint)
+lxml
+
+# Additional dependencies for WeasyPrint
+cairocffi
+tinycss2
+cssselect2

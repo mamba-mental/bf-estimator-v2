@@ -374,6 +374,18 @@ def generate_comprehensive_report(progression, initial_data):
     report_data['weight_progress_chart'] = generate_weight_progress_chart(report_data['weekly_progress'])
     report_data['body_composition_chart'] = generate_body_composition_chart(report_data['body_composition_changes'])
 
+    # Generate the markdown content
+    report_data['markdown_content'] = generate_markdown(report_data)
+
+    # Generate the HTML content
+    html_content = generate_html(report_data)
+
+    # Generate the PDF content using WeasyPrint
+    pdf_content = HTML(string=html_content).write_pdf(stylesheets=[CSS(CSS_FILE)])
+
+    # Store the pdf_content in report_data
+    report_data['pdf_content'] = pdf_content
+    
     # Round all float values to one decimal place
     for key, value in report_data.items():
         if isinstance(value, float):

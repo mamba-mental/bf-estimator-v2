@@ -9,6 +9,8 @@
 # Version: 1.3.1
 # License: Apache License 2.0
 
+# app.py
+
 import os
 import datetime
 import logging
@@ -31,14 +33,16 @@ import glob
 # Disable interactive mode in Matplotlib
 plt.ioff()
 
-# Flask application initialization
-app = Flask(__name__,
-            template_folder='templates',
-            static_folder='styles',
-            static_url_path='/styles')
+# Near the top of the file, after the imports
+logging.basicConfig(level=logging.ERROR)
 
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
+# Modify the app initialization
+app = Flask(__name__, template_folder='templates', static_folder='styles', static_url_path='/styles')
+app.logger.setLevel(logging.ERROR)
+
+# Remove or comment out any debug-level logging statements
+# For example, change or remove lines like:
+# app.logger.debug(f"Some debug message")
 
 # Set a secret key for session management
 app.secret_key = 'mambamental3mil'  # It's better to use a more secure, randomly generated key in production

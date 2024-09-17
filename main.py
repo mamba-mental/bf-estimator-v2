@@ -3,11 +3,11 @@
 # main.py
 # Author: Tiran Ronelle Winston
 # Created: 09/08/24
-# Last Modified: 09/11/24
+# Last Modified: [Today's Date]
 # Description: This script serves as the main entry point for the Weight Loss Predictor program. It handles user interaction, processes data inputs, and generates predictions for weight loss progressions based on various fitness and health parameters. The program can run in test mode using predefined test data or interactively gather user inputs for predictions.
 # Usage: Run this script directly to start the Weight Loss Predictor. Use the '--test' flag to run with test data instead of interactive user input.
 # Dependencies: Requires the following modules: calculations, report_generation, test_data, user_interaction, utils, os, sys, datetime, warnings, contextlib, logging
-# Version: 1.2.2
+# Version: 1.2.5
 # License: Apache License 2.0
 # --- End of Header ---
 
@@ -31,7 +31,7 @@ from contextlib import contextmanager
 import logging
 
 # Setup logging for debugging and tracking program execution.
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # Suppress specific warnings from WeasyPrint library to avoid cluttering the output.
@@ -64,22 +64,7 @@ def suppress_stderr():
             sys.stderr = old_stderr
 
 def run_user_interaction(use_test_data=False, user_data=None):
-    """
-    Runs the main interaction loop with the user. Can either use predefined test data
-    or interactively gather data from the user.
-
-    :param use_test_data: Boolean indicating whether to use test data.
-    :param user_data: Dictionary of user data if provided directly.
-    :return: Tuple containing the predicted weight loss progression and initial data dictionary.
-    """
-    logger.debug(f"Running user interaction with use_test_data={use_test_data}, user_data={user_data}")
-    
-    if use_test_data:
-        return process_test_data(TEST_DATA)
-    elif user_data:
-        return process_test_data(user_data)
-
-    print("Welcome to the Weight Loss Predictor!")
+    # [Function description and initial code remain the same]
 
     # Gather user input for various fitness and health parameters.
     name = input("Enter your name: ")
@@ -104,33 +89,51 @@ def run_user_interaction(use_test_data=False, user_data=None):
     ])
     resistance_training = get_yes_no_input("Are you doing resistance training? (Y/N): ")
     is_athlete = get_yes_no_input("Are you an athlete? (Y/N): ")
-    workout_type = get_choice_input("What type of workouts do you primarily do?", [
+    workout_type_choice = get_choice_input("What type of workouts do you primarily do?", [
         ("1", "Bodybuilding (Strength training and muscle building)"),
         ("2", "Cardio (Cardiovascular exercises like running or cycling)"),
         ("3", "General Fitness (A mix of different exercises for overall health)")
     ])
     workout_days = get_int_input("How many days per week do you work out? ")
-    job_activity = get_choice_input("Select your job activity level:", [
+
+    # Update job_activity and leisure_activity to extract the key
+    job_activity_choice = get_choice_input("Select your job activity level:", [
         ("sedentary", "Mostly sitting (e.g., desk job)"),
         ("light", "Light activity (e.g., teacher, salesperson)"),
         ("moderate", "Moderate activity (e.g., construction worker)"),
         ("active", "Very active (e.g., courier, agriculture)")
     ])
-    leisure_activity = get_choice_input("Select your leisure activity level:", [
+    job_activity = job_activity_choice[0]  # Extract the key
+
+    leisure_activity_choice = get_choice_input("Select your leisure activity level:", [
         ("sedentary", "Little to no physical activity"),
         ("light", "Light physical activity (e.g., walking, gardening)"),
         ("moderate", "Moderate physical activity (e.g., hiking, dancing)"),
         ("active", "High physical activity (e.g., sports, intense exercise)")
     ])
-    experience_level = get_experience_level_input("Enter your experience level (1-5):")
+    leisure_activity = leisure_activity_choice[0]  # Extract the key
+
+    # Get experience level as a tuple (code, description)
+    experience_level_choice = get_experience_level_input("Enter your experience level (1-5):")
+    experience_level_code = int(experience_level_choice[0])
+    experience_level_str = experience_level_choice[1]
+
+    # Map workout type codes to strings
+    workout_type_map = {
+        1: "Bodybuilding",
+        2: "Cardio",
+        3: "General Fitness"
+    }
+    workout_type_code = int(workout_type_choice[0])
+    workout_type_str = workout_type_map.get(workout_type_code)
+    if workout_type_str is None:
+        raise ValueError("Invalid workout type code.")
 
     # Calculate lean mass preservation scores based on user's workout frequency, type, and experience level.
-    # Assuming workout_type[0] is the code as string
-    workout_type_code = int(workout_type[0])
-    volume_score, intensity_score, frequency_score = calculate_lean_mass_preservation_scores(workout_days, workout_type_code)
+    volume_score, intensity_score, frequency_score = calculate_lean_mass_preservation_scores(workout_days, workout_type_str)
 
     # Determine if the user can be classified as a bodybuilder based on workout type and experience level.
-    is_bodybuilder = workout_type_code == 1 and experience_level in ['Intermediate (2-4 years)', 'Advanced (4-10 years)', 'Elite (10+ years)']
+    is_bodybuilder = workout_type_str == "Bodybuilding" and experience_level_str in ['Intermediate (2-4 years)', 'Advanced (4-10 years)', 'Elite (10+ years)']
 
     # Prepare initial data dictionary to store all gathered inputs and calculated scores.
     initial_data = {
@@ -148,13 +151,13 @@ def run_user_interaction(use_test_data=False, user_data=None):
         'height_cm': height_cm,
         'protein_intake': protein_intake,
         'activity_level': int(activity_level[0]),
-        'resistance_training': resistance_training == 'y',
-        'is_athlete': is_athlete == 'y',
-        'workout_type': workout_type_code,
+        'resistance_training': resistance_training,
+        'is_athlete': is_athlete,
+        'workout_type': workout_type_str,
         'workout_days': workout_days,
         'job_activity': job_activity,
         'leisure_activity': leisure_activity,
-        'experience_level': experience_level,
+        'experience_level': experience_level_str,
         'volume_score': volume_score,
         'intensity_score': intensity_score,
         'frequency_score': frequency_score,
@@ -169,9 +172,9 @@ def run_user_interaction(use_test_data=False, user_data=None):
     # Predict weight loss progression using the gathered and processed data.
     progression = predict_weight_loss(
         current_weight, current_bf, goal_weight, goal_bf, start_date, end_date,
-        dob, gender, initial_data['activity_level'], height_cm, is_athlete, resistance_training,
+        dob, gender, initial_data['activity_level'], height_cm, initial_data['is_athlete'], initial_data['resistance_training'],
         protein_intake, volume_score, intensity_score, frequency_score, job_activity,
-        leisure_activity, experience_level, is_bodybuilder
+        leisure_activity, initial_data['experience_level'], is_bodybuilder
     )
 
     logger.debug(f"Prediction completed. Progression length: {len(progression)}")
@@ -180,23 +183,41 @@ def run_user_interaction(use_test_data=False, user_data=None):
 
 def process_test_data(data):
     logger.debug(f"Processing test data: {data}")
-    
-    # Map workout types
-    workout_type_map = {1: "Bodybuilding", 2: "Cardio", 3: "General Fitness"}
-    workout_type_code = data['workout_type']  # Assuming TEST_DATA uses integer codes
-    
+
+    # Map workout type codes to strings
+    workout_type_map = {
+        1: "Bodybuilding",
+        2: "Cardio",
+        3: "General Fitness"
+    }
+
+    # Get workout type string
+    if isinstance(data['workout_type'], int):
+        workout_type_str = workout_type_map.get(data['workout_type'])
+        if workout_type_str is None:
+            raise ValueError("Invalid workout type code in test data.")
+    else:
+        workout_type_str = data['workout_type']
+
     # Calculate lean mass preservation scores
     volume_score, intensity_score, frequency_score = calculate_lean_mass_preservation_scores(
-        data['workout_days'], workout_type_code)
+        data['workout_days'], workout_type_str)
 
     # Map experience levels
-    experience_level_map = {1: "Beginner (0-1 year)", 2: "Novice (1-2 years)", 
-                            3: "Intermediate (2-4 years)", 4: "Advanced (4-10 years)", 
-                            5: "Elite (10+ years)"}
-    experience_level = experience_level_map.get(data['experience_level'], data['experience_level'])
+    experience_level_map = {
+        1: "Beginner (0-1 year)",
+        2: "Novice (1-2 years)",
+        3: "Intermediate (2-4 years)",
+        4: "Advanced (4-10 years)",
+        5: "Elite (10+ years)"
+    }
+    if isinstance(data['experience_level'], int):
+        experience_level = experience_level_map.get(data['experience_level'], "Unknown")
+    else:
+        experience_level = data['experience_level']
 
     # Determine if the user is a bodybuilder
-    is_bodybuilder = workout_type_code == 1 and experience_level in [
+    is_bodybuilder = workout_type_str == "Bodybuilding" and experience_level in [
         'Intermediate (2-4 years)', 'Advanced (4-10 years)', 'Elite (10+ years)']
 
     # Convert height to centimeters
@@ -224,9 +245,9 @@ def process_test_data(data):
         'height_cm': height_cm,
         'protein_intake': data['protein_intake'],
         'activity_level': int(data['activity_level']),
-        'resistance_training': data['resistance_training'],
-        'is_athlete': data['is_athlete'],
-        'workout_type': workout_type_code,
+        'resistance_training': data['resistance_training'] == 'y' if isinstance(data['resistance_training'], str) else data['resistance_training'],
+        'is_athlete': data['is_athlete'] == 'y' if isinstance(data['is_athlete'], str) else data['is_athlete'],
+        'workout_type': workout_type_str,
         'workout_days': data['workout_days'],
         'job_activity': data['job_activity'],
         'leisure_activity': data['leisure_activity'],
@@ -304,7 +325,7 @@ if __name__ == "__main__":
     main()
 
 # --- Footer ---
-# Status of last Update: Added activity_level_description to processed_data in process_test_data function
+# Status of last Update: Corrected handling of experience_level in run_user_interaction and process_test_data functions
 # Contact: mambamental3mil@gmail.com
 # © 2024 Mamba Matrix Solutions LLC. All rights reserved.
 # --- End of File ---

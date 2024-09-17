@@ -15,10 +15,10 @@ TEST_DATA = {
     'activity_level': 1,
     'resistance_training': 'y',
     'is_athlete': 'n',
-    'workout_type': 1,
+    'workout_type': 'Bodybuilding',  # Changed from 1 to 'Bodybuilding'
     'workout_days': 3,
-    'job_activity': 'sedentary',  # Updated from 1 to 'sedentary'
-    'leisure_activity': 'sedentary',  # Updated from 1 to 'sedentary'
+    'job_activity': 'sedentary',
+    'leisure_activity': 'sedentary',
     'experience_level': 4,
     'name': 'Mamba Mental'
 }

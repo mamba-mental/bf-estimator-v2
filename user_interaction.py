@@ -3,14 +3,14 @@
 # user_interaction.py
 # Author: Tiran Ronelle Winston
 # Created: September 10, 2024
-# Last Modified: September 10, 2024
-# Description: This script provides utility functions to interact with the user via command line inputs. 
-#              It includes methods for obtaining validated inputs of different types, such as floats, integers, 
+# Last Modified: [Today's Date]
+# Description: This script provides utility functions to interact with the user via command line inputs.
+#              It includes methods for obtaining validated inputs of different types, such as floats, integers,
 #              experience levels, dates, yes/no responses, and choices from a list.
-# Usage: Import this module into your main program to utilize the input validation functions. 
+# Usage: Import this module into your main program to utilize the input validation functions.
 #        Example: `from user_interaction import get_float_input`
 # Dependencies: Python's built-in `input` function, `datetime` module
-# Version: 1.0.0
+# Version: 1.0.1
 # License: Apache License 2.0
 # --- End of Header ---
 
@@ -61,9 +61,8 @@ def get_experience_level_input(prompt):
         prompt (str): The prompt message displayed to the user.
 
     Returns:
-        str: The description of the selected experience level.
+        tuple: A tuple containing the code and description of the selected experience level.
     """
-    print(prompt)
     levels = [
         ("1", "Beginner (0-1 year)"),
         ("2", "Novice (1-2 years)"),
@@ -71,20 +70,7 @@ def get_experience_level_input(prompt):
         ("4", "Advanced (4-10 years)"),
         ("5", "Elite (10+ years)")
     ]
-    # Display the experience level options to the user.
-    for idx, (level, description) in enumerate(levels, 1):
-        print(f"{idx}. {description}")
-    while True:
-        try:
-            choice = int(input("Choose an option: ").strip())
-            if 1 <= choice <= len(levels):
-                return levels[choice - 1][1]
-            else:
-                # Print an error message if the input is not within the valid range.
-                print(f"Invalid input. Please enter a number between 1 and {len(levels)}.")
-        except ValueError:
-            # Print an error message if the input is not an integer.
-            print(f"Invalid input. Please enter a number between 1 and {len(levels)}.")
+    return get_choice_input(prompt, levels)
 
 def get_date_input(prompt):
     """
@@ -133,17 +119,17 @@ def get_choice_input(prompt, choices_descriptions):
         choices_descriptions (list): A list of tuples, where each tuple contains a choice identifier and its description.
 
     Returns:
-        str: The identifier of the selected choice.
+        tuple: A tuple containing the selected choice identifier and its description.
     """
     print(prompt)
     # Display the available choices to the user.
     for idx, (choice, description) in enumerate(choices_descriptions, 1):
-        print(f"{idx}. {choice} - {description}")
+        print(f"{idx}. {description}")
     while True:
         try:
             choice = int(input("Choose an option: ").strip())
             if 1 <= choice <= len(choices_descriptions):
-                return choices_descriptions[choice - 1][0]
+                return choices_descriptions[choice - 1]
             else:
                 # Print an error message if the input is not within the valid range.
                 print(f"Invalid input. Please enter a number between 1 and {len(choices_descriptions)}.")
@@ -152,7 +138,8 @@ def get_choice_input(prompt, choices_descriptions):
             print(f"Invalid input. Please enter a number between 1 and {len(choices_descriptions)}.")
 
 # --- Footer ---
-# Status: Development
+# Status: Updated get_choice_input to return both code and description.
+#         Updated get_experience_level_input to use get_choice_input accordingly.
 # Contact: mambamental3mil@gmail.com
 # © 2024 Mamba Matrix Solutions LLC. All rights reserved.
 # --- End of File ---

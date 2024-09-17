@@ -1,44 +1,16 @@
+# main.py
 # --- Beginning of File ---
 # main.py
 # Author: Tiran Ronelle Winston
-# Created: 2024-09-10
-# Last Modified: 2024-09-10
-# Description: This script serves as the main entry point for the Weight Loss Predictor app. It interacts with the user to gather personal and fitness-related information, processes this data to predict weight loss progression, and generates a detailed report.
-# Usage: Run this script to start the Weight Loss Predictor app. The script supports an optional '--test' flag to use predefined test data instead of user input.
-# Dependencies: os, sys, datetime, weasyprint, mistune, calculations, user_interaction, report_generation, test_data, utils
-# Version: 1.0.0
+# Created: 09/08/24
+# Last Modified: 09/11/24
+# Description: This script serves as the main entry point for the Weight Loss Predictor program. It handles user interaction, processes data inputs, and generates predictions for weight loss progressions based on various fitness and health parameters. The program can run in test mode using predefined test data or interactively gather user inputs for predictions.
+# Usage: Run this script directly to start the Weight Loss Predictor. Use the '--test' flag to run with test data instead of interactive user input.
+# Dependencies: Requires the following modules: calculations, report_generation, test_data, user_interaction, utils, os, sys, datetime, warnings, contextlib, logging
+# Version: 1.2.2
 # License: Apache License 2.0
 # --- End of Header ---
 
-# Standard library imports
-import os
-import sys
-from datetime import datetime
-import warnings
-from contextlib import contextmanager
-
-# Suppress specific warnings from WeasyPrint
-warnings.filterwarnings("ignore", category=UserWarning, module="weasyprint")
-
-# Suppress GLib-GIO warnings and stderr globally
-os.environ['G_MESSAGES_DEBUG'] = 'none'
-os.environ['G_DEBUG'] = 'fatal-warnings'  # Attempt to further suppress warnings
-
-# Set environment variables for WeasyPrint and GTK
-os.environ['GIO_USE_VFS'] = 'local'
-os.environ['GDK_BACKEND'] = 'x11'
-
-# Set the GTK path
-gtk_bin_path = r"C:\\Program Files\\GTK3-Runtime Win64\\bin"
-os.environ["PATH"] += os.pathsep + gtk_bin_path
-
-# Third-party imports
-import mistune
-import pdfkit
-from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML, CSS
-
-# Local application/library specific imports
 from calculations import (
     calculate_lean_mass_preservation_scores, calculate_tdee,
     calculate_metabolic_adaptation, distribute_weight_loss,
@@ -51,9 +23,38 @@ from user_interaction import (
     get_date_input, get_yes_no_input, get_choice_input
 )
 from utils import calculate_age
+import os
+import sys
+from datetime import datetime
+import warnings
+from contextlib import contextmanager
+import logging
+
+# Setup logging for debugging and tracking program execution.
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Suppress specific warnings from WeasyPrint library to avoid cluttering the output.
+warnings.filterwarnings("ignore", category=UserWarning, module="weasyprint")
+
+# Suppress GLib-GIO warnings and stderr globally to prevent unnecessary warnings during execution.
+os.environ['G_MESSAGES_DEBUG'] = 'none'
+os.environ['G_DEBUG'] = 'fatal-warnings'
+
+# Set environment variables for WeasyPrint and GTK libraries.
+os.environ['GIO_USE_VFS'] = 'local'
+os.environ['GDK_BACKEND'] = 'x11'
+
+# Set the path for the GTK binary files.
+gtk_bin_path = r"C:\\Program Files\\GTK3-Runtime Win64\\bin"
+os.environ["PATH"] += os.pathsep + gtk_bin_path
 
 @contextmanager
 def suppress_stderr():
+    """
+    Context manager to suppress stderr output.
+    This is useful to hide unwanted error messages from libraries during execution.
+    """
     with open(os.devnull, 'w') as devnull:
         old_stderr = sys.stderr
         sys.stderr = devnull
@@ -62,41 +63,26 @@ def suppress_stderr():
         finally:
             sys.stderr = old_stderr
 
-def generate_pdf_report(report_data, pdf_file):
+def run_user_interaction(use_test_data=False, user_data=None):
     """
-    Generates a PDF report using Jinja2 template and pdfkit.
+    Runs the main interaction loop with the user. Can either use predefined test data
+    or interactively gather data from the user.
 
-    Args:
-    report_data (dict): The data to be used in the report template.
-    pdf_file (str): The path where the PDF file will be saved.
+    :param use_test_data: Boolean indicating whether to use test data.
+    :param user_data: Dictionary of user data if provided directly.
+    :return: Tuple containing the predicted weight loss progression and initial data dictionary.
     """
-    env = Environment(loader=FileSystemLoader('templates'))
-    template = env.get_template('report-template.html')
+    logger.debug(f"Running user interaction with use_test_data={use_test_data}, user_data={user_data}")
     
-    html_content = template.render(report_data)
-    
-    css_file = os.path.join('templates', 'report-template-styles.css')
-    
-    pdfkit.from_string(html_content, pdf_file, css=css_file)
-    
-    print(f"PDF report saved as {pdf_file}")
-
-def run_user_interaction(use_test_data=False):
-    """
-    Handles user interaction to gather input data for weight loss prediction.
-
-    Args:
-    use_test_data (bool): If True, uses predefined test data instead of user input.
-
-    Returns:
-    tuple: A tuple containing the weight loss progression and initial user data.
-    """
     if use_test_data:
-        return TEST_DATA
+        return process_test_data(TEST_DATA)
+    elif user_data:
+        return process_test_data(user_data)
 
     print("Welcome to the Weight Loss Predictor!")
 
-    # Gather user input for various parameters
+    # Gather user input for various fitness and health parameters.
+    name = input("Enter your name: ")
     current_weight = get_float_input("Enter your current weight in lbs: ")
     current_bf = get_float_input("Enter your current body fat percentage: ")
     goal_weight = get_float_input("Enter your goal weight in lbs: ")
@@ -119,9 +105,9 @@ def run_user_interaction(use_test_data=False):
     resistance_training = get_yes_no_input("Are you doing resistance training? (Y/N): ")
     is_athlete = get_yes_no_input("Are you an athlete? (Y/N): ")
     workout_type = get_choice_input("What type of workouts do you primarily do?", [
-        ("Bodybuilding", "Strength training and muscle building"),
-        ("Cardio", "Cardiovascular exercises like running or cycling"),
-        ("General Fitness", "A mix of different exercises for overall health")
+        ("1", "Bodybuilding (Strength training and muscle building)"),
+        ("2", "Cardio (Cardiovascular exercises like running or cycling)"),
+        ("3", "General Fitness (A mix of different exercises for overall health)")
     ])
     workout_days = get_int_input("How many days per week do you work out? ")
     job_activity = get_choice_input("Select your job activity level:", [
@@ -137,151 +123,188 @@ def run_user_interaction(use_test_data=False):
         ("active", "High physical activity (e.g., sports, intense exercise)")
     ])
     experience_level = get_experience_level_input("Enter your experience level (1-5):")
-    name = input("Enter your name: ")
 
-    # Calculate lean mass preservation scores
-    volume_score, intensity_score, frequency_score = calculate_lean_mass_preservation_scores(workout_days, workout_type)
+    # Calculate lean mass preservation scores based on user's workout frequency, type, and experience level.
+    # Assuming workout_type[0] is the code as string
+    workout_type_code = int(workout_type[0])
+    volume_score, intensity_score, frequency_score = calculate_lean_mass_preservation_scores(workout_days, workout_type_code)
 
-    # Determine if the user is a bodybuilder
-    is_bodybuilder = workout_type == "Bodybuilding" and experience_level in ['Intermediate (2-4 years)', 'Advanced (4-10 years)', 'Elite (10+ years)']
+    # Determine if the user can be classified as a bodybuilder based on workout type and experience level.
+    is_bodybuilder = workout_type_code == 1 and experience_level in ['Intermediate (2-4 years)', 'Advanced (4-10 years)', 'Elite (10+ years)']
 
-    # Predict weight loss progression
-    progression = predict_weight_loss(
-        current_weight, current_bf, goal_weight, goal_bf, start_date, end_date,
-        dob, gender, int(activity_level), height_cm, is_athlete, resistance_training,
-        protein_intake, volume_score, intensity_score, frequency_score, job_activity,
-        leisure_activity, experience_level, is_bodybuilder
-    )
-
-    # Prepare initial data dictionary
+    # Prepare initial data dictionary to store all gathered inputs and calculated scores.
     initial_data = {
         'name': name,
+        'current_weight': current_weight,
+        'current_bf': current_bf,
+        'goal_weight': goal_weight,
+        'goal_bf': goal_bf,
+        'start_date': start_date,
+        'end_date': end_date,
         'dob': dob,
         'gender': gender,
         'height_feet': height_feet,
         'height_inches': height_inches,
         'height_cm': height_cm,
-        'goal_weight': goal_weight,
-        'goal_bf': goal_bf,
-        'activity_level_description': ["Little to no exercise", "Light exercise/sports 1-3 days/week", "Moderate exercise/sports 3-5 days/week", "Hard exercise/sports 6-7 days a week", "Very hard exercise/sports & a physical job"][int(activity_level) - 1],
-        'experience_level': experience_level,
         'protein_intake': protein_intake,
-        'workout_type': workout_type,
+        'activity_level': int(activity_level[0]),
+        'resistance_training': resistance_training == 'y',
+        'is_athlete': is_athlete == 'y',
+        'workout_type': workout_type_code,
         'workout_days': workout_days,
+        'job_activity': job_activity,
+        'leisure_activity': leisure_activity,
+        'experience_level': experience_level,
         'volume_score': volume_score,
         'intensity_score': intensity_score,
         'frequency_score': frequency_score,
-        'resistance_training': resistance_training,
-        'is_athlete': is_athlete,
-        'job_activity': job_activity,
-        'leisure_activity': leisure_activity,
         'is_bodybuilder': is_bodybuilder
     }
 
+    # Add a description for the activity level based on the chosen level.
+    initial_data['activity_level_description'] = get_activity_level_description(initial_data['activity_level'])
+
+    logger.debug(f"Initial data prepared: {initial_data}")
+
+    # Predict weight loss progression using the gathered and processed data.
+    progression = predict_weight_loss(
+        current_weight, current_bf, goal_weight, goal_bf, start_date, end_date,
+        dob, gender, initial_data['activity_level'], height_cm, is_athlete, resistance_training,
+        protein_intake, volume_score, intensity_score, frequency_score, job_activity,
+        leisure_activity, experience_level, is_bodybuilder
+    )
+
+    logger.debug(f"Prediction completed. Progression length: {len(progression)}")
+
     return progression, initial_data
 
-def process_test_data(test_data):
-    """
-    Processes test data to match predict_weight_loss parameters.
-
-    Args:
-    test_data (dict): Dictionary containing test data.
-
-    Returns:
-    dict: Processed test data ready for weight loss prediction.
-    """
+def process_test_data(data):
+    logger.debug(f"Processing test data: {data}")
+    
     # Map workout types
     workout_type_map = {1: "Bodybuilding", 2: "Cardio", 3: "General Fitness"}
-    workout_type = workout_type_map.get(test_data['workout_type'], test_data['workout_type'])
-
+    workout_type_code = data['workout_type']  # Assuming TEST_DATA uses integer codes
+    
     # Calculate lean mass preservation scores
     volume_score, intensity_score, frequency_score = calculate_lean_mass_preservation_scores(
-        test_data['workout_days'], workout_type)
+        data['workout_days'], workout_type_code)
 
     # Map experience levels
     experience_level_map = {1: "Beginner (0-1 year)", 2: "Novice (1-2 years)", 
                             3: "Intermediate (2-4 years)", 4: "Advanced (4-10 years)", 
                             5: "Elite (10+ years)"}
-    experience_level = experience_level_map.get(test_data['experience_level'], test_data['experience_level'])
+    experience_level = experience_level_map.get(data['experience_level'], data['experience_level'])
 
     # Determine if the user is a bodybuilder
-    is_bodybuilder = workout_type == "Bodybuilding" and experience_level in [
+    is_bodybuilder = workout_type_code == 1 and experience_level in [
         'Intermediate (2-4 years)', 'Advanced (4-10 years)', 'Elite (10+ years)']
 
-    # Map job and leisure activity levels
-    job_activity_map = {1: "sedentary", 2: "light", 3: "moderate", 4: "active"}
-    leisure_activity_map = {1: "sedentary", 2: "light", 3: "moderate", 4: "active"}
-
     # Convert height to centimeters
-    height_cm = (test_data['height_feet'] * 12 + test_data['height_inches']) * 2.54
+    height_cm = (data['height_feet'] * 12 + data['height_inches']) * 2.54
+
+    # Helper function to handle both string and datetime objects
+    def parse_date(date_value):
+        if isinstance(date_value, datetime):
+            return date_value
+        return datetime.strptime(date_value, "%m%d%y")
 
     # Prepare processed data dictionary
     processed_data = {
-        'current_weight': test_data['current_weight'],
-        'current_bf': test_data['current_bf'],
-        'goal_weight': test_data['goal_weight'],
-        'goal_bf': test_data['goal_bf'],
-        'start_date': datetime.strptime(test_data['start_date'], "%m%d%y"),
-        'end_date': datetime.strptime(test_data['end_date'], "%m%d%y"),
-        'dob': datetime.strptime(test_data['dob'], "%m%d%y"),
-        'gender': test_data['gender'],
-        'activity_level': int(test_data['activity_level']),
+        'name': data['name'],
+        'current_weight': data['current_weight'],
+        'current_bf': data['current_bf'],
+        'goal_weight': data['goal_weight'],
+        'goal_bf': data['goal_bf'],
+        'start_date': parse_date(data['start_date']),
+        'end_date': parse_date(data['end_date']),
+        'dob': parse_date(data['dob']),
+        'gender': data['gender'],
+        'height_feet': data['height_feet'],
+        'height_inches': data['height_inches'],
         'height_cm': height_cm,
-        'is_athlete': test_data['is_athlete'] == 'y',
-        'resistance_training': test_data['resistance_training'] == 'y',
-        'daily_protein_intake': test_data['protein_intake'],
+        'protein_intake': data['protein_intake'],
+        'activity_level': int(data['activity_level']),
+        'resistance_training': data['resistance_training'],
+        'is_athlete': data['is_athlete'],
+        'workout_type': workout_type_code,
+        'workout_days': data['workout_days'],
+        'job_activity': data['job_activity'],
+        'leisure_activity': data['leisure_activity'],
+        'experience_level': experience_level,
         'volume_score': volume_score,
         'intensity_score': intensity_score,
         'frequency_score': frequency_score,
-        'job_activity': job_activity_map.get(test_data['job_activity'], test_data['job_activity']),
-        'leisure_activity': leisure_activity_map.get(test_data['leisure_activity'], test_data['leisure_activity']),
-        'experience_level': experience_level,
         'is_bodybuilder': is_bodybuilder
     }
 
-    return processed_data
+    # Add activity level description
+    processed_data['activity_level_description'] = get_activity_level_description(processed_data['activity_level'])
+
+    logger.debug(f"Processed data: {processed_data}")
+
+    # Predict weight loss progression
+    progression = predict_weight_loss(
+        processed_data['current_weight'], processed_data['current_bf'],
+        processed_data['goal_weight'], processed_data['goal_bf'],
+        processed_data['start_date'], processed_data['end_date'],
+        processed_data['dob'], processed_data['gender'],
+        processed_data['activity_level'], processed_data['height_cm'],
+        processed_data['is_athlete'], processed_data['resistance_training'],
+        processed_data['protein_intake'], processed_data['volume_score'],
+        processed_data['intensity_score'], processed_data['frequency_score'],
+        processed_data['job_activity'], processed_data['leisure_activity'],
+        processed_data['experience_level'], processed_data['is_bodybuilder']
+    )
+
+    logger.debug(f"Prediction completed. Progression length: {len(progression)}")
+
+    return progression, processed_data
+
+def get_activity_level_description(activity_level):
+    """
+    Provides a description for a given activity level code.
+
+    :param activity_level: Numeric code representing the activity level.
+    :return: String description of the activity level.
+    """
+    activity_levels = {
+        1: "Little to no exercise",
+        2: "Light exercise/sports 1-3 days/week",
+        3: "Moderate exercise/sports 3-5 days/week",
+        4: "Hard exercise/sports 6-7 days a week",
+        5: "Very hard exercise/sports & a physical job"
+    }
+    return activity_levels.get(int(activity_level), "Unknown")
 
 def main():
     """
-    Main function to run the Weight Loss Predictor application.
+    Main function that initializes the program, suppresses unwanted stderr output,
+    and manages the execution flow based on user input or test mode.
     """
     with suppress_stderr():
-        # Check if test mode is activated
+        # Check if test mode is activated using command-line arguments.
         use_test_data = '--test' in sys.argv
-        if use_test_data:
-            # Process test data
-            test_data = run_user_interaction(use_test_data=True)
-            processed_test_data = process_test_data(test_data)
-            activity_level_description = [
-                "Little to no exercise",
-                "Light exercise/sports 1-3 days/week",
-                "Moderate exercise/sports 3-5 days/week",
-                "Hard exercise/sports 6-7 days a week",
-                "Very hard exercise/sports & a physical job"
-            ][int(test_data['activity_level']) - 1]
-            initial_data = {
-                **test_data, 
-                'dob': processed_test_data['dob'], 
-                'is_bodybuilder': processed_test_data['is_bodybuilder'],
-                'height_cm': processed_test_data['height_cm'],
-                'activity_level_description': activity_level_description,
-                'volume_score': processed_test_data['volume_score'],
-                'intensity_score': processed_test_data['intensity_score'],
-                'frequency_score': processed_test_data['frequency_score'],
-            }
-            progression = predict_weight_loss(**processed_test_data)
-        else:
-            # Run normal user interaction
-            progression, initial_data = run_user_interaction()
+        progression, initial_data = run_user_interaction(use_test_data=use_test_data)
         
-        # Print summary of results
-        print_summary(progression, initial_data)
+        # Print summary of results to the user and capture saved file paths.
+        saved_files = print_summary(progression, initial_data)
+        
+        # Handle the saved_files as needed.
+        if saved_files:
+            if 'markdown' in saved_files:
+                logger.info(f"Markdown report available at: {saved_files['markdown']}")
+            if 'pdf' in saved_files:
+                logger.info(f"PDF report available at: {saved_files['pdf']}")
+            if 'pdf_error' in saved_files:
+                logger.error(f"Failed to generate PDF report: {saved_files['pdf_error']}")
+        else:
+            logger.info("No reports were saved.")
 
 if __name__ == "__main__":
     main()
 
 # --- Footer ---
-# Status: Development
+# Status of last Update: Added activity_level_description to processed_data in process_test_data function
 # Contact: mambamental3mil@gmail.com
 # © 2024 Mamba Matrix Solutions LLC. All rights reserved.
 # --- End of File ---

@@ -1,6 +1,20 @@
+# report_generation.py
+# --- Beginning of File ---
+# report_generation.py
+# Author: Tiran Ronelle Winston
+# Created: 09/09/24
+# Last Modified: 09/11/24
+# Description: A Python script to generate personalized weight loss journey reports in Markdown and PDF formats.
+# Usage: The script can be used to generate reports from provided data and save them in the desired format.
+# Dependencies: os, datetime, base64, io, matplotlib.pyplot, weasyprint.HTML, weasyprint.CSS, jinja2.Environment, jinja2.FileSystemLoader, json
+# Version: 1.2.7
+# License: Apache License 2.0
+# --- End of Header ---
+
 import os
 import datetime
-import base64
+import json  # Ensure this is added
+import base64  # Import base64 for encoding binary data
 import io
 import matplotlib.pyplot as plt
 from weasyprint import HTML, CSS
@@ -11,29 +25,57 @@ RESULTS_FOLDER = os.path.join(SCRIPT_DIR, "results")
 TEMPLATE_FOLDER = os.path.join(SCRIPT_DIR, "templates")
 CSS_FILE = os.path.join(SCRIPT_DIR, "styles", "report_style.css")
 
-def save_report(report_data, username, save_format):
-    if not os.path.exists(RESULTS_FOLDER):
-        os.makedirs(RESULTS_FOLDER)
 
+def save_report(report_data, username, save_format):
+    """
+    Save the report in the specified format(s).
+
+    Args:
+        report_data (dict): The data to be included in the report.
+        username (str): The name of the user for filename purposes.
+        save_format (str): The format to save the report ('pdf', 'md', 'both', 'json').
+
+    Returns:
+        dict: A dictionary containing paths to the saved files.
+    """
+    saved_files = {}
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_filename = f"{username}_{timestamp}"
-    
-    if save_format in ['markdown', 'both']:
-        markdown_filename = os.path.join(RESULTS_FOLDER, f"{base_filename}.md")
+    base_filename = f"{username.replace(' ', '_')}_{timestamp}"
+    results_folder = os.path.abspath('results')  # Absolute path for consistency
+
+    if save_format in ['markdown', 'md', 'both']:
+        markdown_filename = os.path.join(results_folder, f"{base_filename}.md")
+        markdown_content = report_data.get('markdown_content', '')
         with open(markdown_filename, 'w') as f:
-            f.write(generate_markdown(report_data))
-        print(f"Markdown report saved as {markdown_filename}")
+            f.write(markdown_content)
+        saved_files['markdown'] = markdown_filename
 
     if save_format in ['pdf', 'both']:
-        pdf_filename = os.path.join(RESULTS_FOLDER, f"{base_filename}.pdf")
-        try:
-            html_content = generate_html(report_data)
-            HTML(string=html_content).write_pdf(pdf_filename, stylesheets=[CSS(filename=CSS_FILE)])
-            print(f"PDF report saved as {pdf_filename}")
-        except Exception as e:
-            print(f"Error generating PDF: {str(e)}")
+        pdf_filename = os.path.join(results_folder, f"{base_filename}.pdf")
+        pdf_content = report_data.get('pdf_content', b'')
+        with open(pdf_filename, 'wb') as f:
+            f.write(pdf_content)
+        saved_files['pdf'] = pdf_filename
+
+    if save_format in ['json', 'both']:
+        json_filename = os.path.join(results_folder, f"{base_filename}.json")
+        # Encode 'pdf_content' using Base64 to make it JSON serializable
+        json_data = report_data.copy()
+        if 'pdf_content' in json_data:
+            json_data['pdf_content'] = base64.b64encode(json_data['pdf_content']).decode('utf-8')
+        with open(json_filename, 'w') as f:
+            json.dump(json_data, f, default=str)
+        saved_files['json'] = json_filename
+
+    return saved_files
+
 
 def generate_markdown(report_data):
+    # Generate a Markdown formatted report.
+    # Parameters:
+    # report_data (dict): The data to be included in the report.
+    # Returns:
+    # str: A string containing the Markdown formatted report.
     markdown = f"""# Your Personalized Weight Loss Journey Report
 
 Generated on: {report_data['report_date']}
@@ -128,6 +170,11 @@ Generated on: {report_data['report_date']}
     return markdown
 
 def generate_html(report_data):
+    # Generate an HTML formatted report for PDF conversion.
+    # Parameters:
+    # report_data (dict): The data to be included in the report.
+    # Returns:
+    # str: A string containing the HTML formatted report.
     env = Environment(loader=FileSystemLoader(TEMPLATE_FOLDER))
     
     # Add the get_score_description function to the template environment
@@ -141,10 +188,28 @@ def generate_html(report_data):
     
     return template.render(report_data)
 
-
 def generate_weight_progress_chart(weekly_progress):
-    dates = [datetime.datetime.strptime(week['date'], '%m%d%y') for week in weekly_progress]
-    weights = [week['weight'] for week in weekly_progress]
+    # Generate a chart showing the user's weight progress over time.
+    # Parameters:
+    # weekly_progress (list): A list of dictionaries containing weekly progress data.
+    # Returns:
+    # str: A base64 encoded string of the generated chart image.
+    dates = []
+    weights = []
+    for week in weekly_progress:
+        try:
+            # Try parsing with '%m%d%y' format first
+            date = datetime.datetime.strptime(week['date'], '%m%d%y')
+        except ValueError:
+            try:
+                # If that fails, try '%m/%d/%Y' format
+                date = datetime.datetime.strptime(week['date'], '%m/%d/%Y')
+            except ValueError:
+                # If both fail, log an error and skip this data point
+                print(f"Error parsing date: {week['date']}. Skipping this data point.")
+                continue
+        dates.append(date)
+        weights.append(week['weight'])
     
     plt.figure(figsize=(10, 6))
     plt.plot(dates, weights, marker='o')
@@ -159,8 +224,27 @@ def generate_weight_progress_chart(weekly_progress):
     return base64.b64encode(img_buffer.getvalue()).decode()
 
 def generate_body_composition_chart(body_composition_changes):
-    dates = [datetime.datetime.strptime(change['date_reached'], '%m/%d/%Y') for change in body_composition_changes]
-    body_fat_percentages = [change['body_fat_percentage'] for change in body_composition_changes]
+    # Generate a chart showing changes in body composition over time.
+    # Parameters:
+    # body_composition_changes (list): A list of dictionaries containing body composition data.
+    # Returns:
+    # str: A base64 encoded string of the generated chart image.
+    dates = []
+    body_fat_percentages = []
+    for change in body_composition_changes:
+        try:
+            # Try parsing with '%m/%d/%Y' format first
+            date = datetime.datetime.strptime(change['date_reached'], '%m/%d/%Y')
+        except ValueError:
+            try:
+                # If that fails, try '%m%d%y' format
+                date = datetime.datetime.strptime(change['date_reached'], '%m%d%y')
+            except ValueError:
+                # If both fail, log an error and skip this data point
+                print(f"Error parsing date: {change['date_reached']}. Skipping this data point.")
+                continue
+        dates.append(date)
+        body_fat_percentages.append(change['body_fat_percentage'])
     
     plt.figure(figsize=(10, 6))
     plt.plot(dates, body_fat_percentages, marker='o')
@@ -174,8 +258,11 @@ def generate_body_composition_chart(body_composition_changes):
     img_buffer.seek(0)
     return base64.b64encode(img_buffer.getvalue()).decode()
 
-
 def print_summary(progression, initial_data):
+    # Print a summary of the weight loss journey and optionally save the detailed report.
+    # Parameters:
+    # progression (list): A list of dictionaries containing weekly progress data.
+    # initial_data (dict): A dictionary containing the user's initial data and settings.
     report_data = generate_comprehensive_report(progression, initial_data)
     
     print("\nWeight Loss Journey Summary:")
@@ -188,16 +275,26 @@ def print_summary(progression, initial_data):
     print(f"Total Muscle Gain: {report_data['total_muscle_gain']:.1f} lbs")
     
     save_option = input("\nDo you want to save the detailed report? (y/n): ").lower()
+    saved_files = {}
     if save_option == 'y':
         save_format = input("Choose the format to save (markdown/pdf/both): ").lower()
         if save_format in ['markdown', 'pdf', 'both']:
-            save_report(report_data, initial_data.get('name', 'User'), save_format)
+            saved_files = save_report(report_data, initial_data.get('name', 'User'), save_format)
         else:
             print("Invalid format choice. Report will not be saved.")
     else:
         print("Report will not be saved.")
+    
+    return saved_files
+
 
 def generate_comprehensive_report(progression, initial_data):
+    # Generate a comprehensive report with all relevant data.
+    # Parameters:
+    # progression (list): A list of dictionaries containing weekly progress data.
+    # initial_data (dict): A dictionary containing the user's initial data and settings.
+    # Returns:
+    # dict: A dictionary containing the full report data.
     report_data = {
         'name': initial_data['name'],
         'report_date': datetime.datetime.now().strftime("%m/%d/%Y"),
@@ -212,7 +309,7 @@ def generate_comprehensive_report(progression, initial_data):
         'initial_body_fat': progression[0]['body_fat_percentage'],
         'final_body_fat': progression[-1]['body_fat_percentage'],
         'goal_body_fat': initial_data['goal_bf'],
-        'activity_level': initial_data['activity_level_description'],
+        'activity_level': initial_data.get('activity_level_description', 'Unknown'),
         'experience_level': initial_data['experience_level'],
         'initial_rmr': progression[0]['rmr'],
         'initial_tdee': progression[0]['tdee'],
@@ -232,10 +329,6 @@ def generate_comprehensive_report(progression, initial_data):
         'weekly_progress': [
             {**week, 'date': datetime.datetime.strptime(week['date'], "%m%d%y").strftime("%m/%d/%Y")}
             for week in progression
-        ],
-        'body_composition_changes': [
-            {**change, 'date_reached': datetime.datetime.strptime(change['date_reached'], "%m/%d/%Y").strftime("%m/%d/%Y")}
-            for change in initial_data.get('body_composition_changes', [])
         ],
         'week_1_adaptation': 1.0,
         'final_week_adaptation': progression[-1]['tdee'] / progression[0]['tdee'],
@@ -289,18 +382,40 @@ def generate_comprehensive_report(progression, initial_data):
     return report_data
 
 def calculate_age(birth_date, start_date):
+    # Calculate the age of the user based on birth date and start date.
+    # Parameters:
+    # birth_date (datetime): The user's birth date.
+    # start_date (datetime): The start date of the weight loss journey.
+    # Returns:
+    # int: The calculated age in years.
     return start_date.year - birth_date.year - ((start_date.month, start_date.day) < (birth_date.month, birth_date.day))
 
 def calculate_tef(protein_intake):
-    # Placeholder function, replace with actual calculation
+    # Calculate the Thermic Effect of Food (TEF) based on protein intake.
+    # This function assumes that 10% of the protein intake contributes to TEF.
+    # Parameters:
+    # protein_intake (int): The amount of protein intake in grams.
+    # Returns:
+    # int: The calculated TEF value.
     return protein_intake * 0.1
 
 def calculate_neat(job_activity, leisure_activity):
-    # Placeholder function, replace with actual calculation
+    # Calculate Non-Exercise Activity Thermogenesis (NEAT) based on activity levels.
+    # The function assigns a numerical value to activity levels and combines job and leisure activities to estimate NEAT.
+    # Parameters:
+    # job_activity (str): The user's job activity level.
+    # leisure_activity (str): The user's leisure activity level.
+    # Returns:
+    # int: The calculated NEAT value.
     activity_levels = {'sedentary': 1, 'light': 2, 'moderate': 3, 'active': 4}
     return (activity_levels[job_activity] + activity_levels[leisure_activity]) * 50
 
 def get_workout_type_description(workout_type):
+    # Get a description of the workout type based on its code.
+    # Parameters:
+    # workout_type (int): The code representing the workout type.
+    # Returns:
+    # str: The description of the workout type.
     descriptions = {
         1: "Bodybuilding (focus on muscle hypertrophy)",
         2: "Strength Training (focus on increasing maximal strength)",
@@ -313,6 +428,11 @@ def get_workout_type_description(workout_type):
     return descriptions.get(workout_type, "Custom workout plan")
 
 def get_score_description(score):
+    # Get a description for a score based on its value.
+    # Parameters:
+    # score (float): The score value.
+    # Returns:
+    # str: The description corresponding to the score.
     if score < 0.2:
         return "Very Low"
     elif score < 0.4:
@@ -325,6 +445,12 @@ def get_score_description(score):
         return "Very High"
 
 def get_body_fat_info(gender, body_fat_percentage):
+    # Get information about body fat percentage, including category, time to six-pack, and description.
+    # Parameters:
+    # gender (str): The gender of the user ('m' or 'f').
+    # body_fat_percentage (float): The user's body fat percentage.
+    # Returns:
+    # tuple: A tuple containing the body fat category, time to six-pack, and description.
     categories = [
         {"name": "Very Lean", "men": 10, "women": 18, "time": "3-4 weeks", "description": "Visible abs, vascularity, striations"},
         {"name": "Lean", "men": 14, "women": 22, "time": "2-3 months", "description": "Some muscle definition, less visible abs"},
@@ -341,39 +467,6 @@ def get_body_fat_info(gender, body_fat_percentage):
             return category["name"], category["time"], category["description"]
 
     return categories[-1]["name"], categories[-1]["time"], categories[-1]["description"]
-
-def generate_weight_progress_chart(weekly_progress):
-    dates = [datetime.datetime.strptime(week['date'], "%m/%d/%Y") for week in weekly_progress]
-    weights = [week['weight'] for week in weekly_progress]
-    
-    plt.figure(figsize=(10, 6))
-    plt.plot(dates, weights, marker='o')
-    plt.title('Weight Progress')
-    plt.xlabel('Date')
-    plt.ylabel('Weight (lbs)')
-    plt.grid(True)
-    
-    img_buffer = io.BytesIO()
-    plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
-    return base64.b64encode(img_buffer.getvalue()).decode()
-
-def generate_body_composition_chart(body_composition_changes):
-    dates = [datetime.datetime.strptime(change['date_reached'], "%m/%d/%Y") for change in body_composition_changes]
-    body_fat_percentages = [change['body_fat_percentage'] for change in body_composition_changes]
-    
-    plt.figure(figsize=(10, 6))
-    plt.plot(dates, body_fat_percentages, marker='o')
-    plt.title('Body Composition Changes')
-    plt.xlabel('Date')
-    plt.ylabel('Body Fat Percentage')
-    plt.grid(True)
-    
-    img_buffer = io.BytesIO()
-    plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
-    return base64.b64encode(img_buffer.getvalue()).decode()
-
 
 if __name__ == "__main__":
     # This block is for testing purposes only

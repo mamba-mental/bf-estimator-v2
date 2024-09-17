@@ -1,3 +1,4 @@
+/* styles\report_style.css */
 body {
     font-family: Georgia, serif;
     font-size: 12pt;
@@ -14,7 +15,9 @@ body {
 
 .cover {
     text-align: center;
-    height: 100vh;
+    min-height: 100vh; /* Changed from height to min-height */
+    min-height: 100dvh; /* Added for better mobile support */
+    height: 100%; /* Fallback for older browsers */
     display: flex;
     flex-direction: column;
     justify-content: center;

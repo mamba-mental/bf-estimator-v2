@@ -2,15 +2,19 @@
 datetime
 
 # Data processing and analysis
-numpy~=2.1.1
-pandas~=2.2.2
+numpy>=1.24.0
+pandas>=1.5.0
 
 # Plotting and visualization
-matplotlib~=3.9.2
+matplotlib>=3.7.1
 
 # Web framework and templating
 Flask~=3.0.0
+Flask-WTF~=1.2.1
+Flask-Session~=0.5.0
+Flask-Login~=0.6.3  # For session management
 Jinja2~=3.1.4
+WTForms~=3.1.1  # Form handling
 
 # PDF generation
 WeasyPrint~=62.3

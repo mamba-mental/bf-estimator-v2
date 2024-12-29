@@ -1,10 +1,11 @@
+# tests\test_report_generation.py
 # tests/test_report_generation.py
 
 import unittest
 from report_generation import save_report
 import os
 import json
-import base64  # Import base64 for decoding
+import base64
 
 class TestSaveReport(unittest.TestCase):
     def setUp(self):
@@ -46,14 +47,22 @@ class TestSaveReport(unittest.TestCase):
         saved_files = save_report(self.report_data, self.username, 'both')
         self.assertIn('markdown', saved_files)
         self.assertIn('pdf', saved_files)
+        self.assertIn('json', saved_files)
         self.assertTrue(os.path.exists(saved_files['markdown']))
         self.assertTrue(os.path.exists(saved_files['pdf']))
+        self.assertTrue(os.path.exists(saved_files['json']))
         with open(saved_files['markdown'], 'r') as f:
             content = f.read()
             self.assertEqual(content, '# Test Report')
         with open(saved_files['pdf'], 'rb') as f:
             content = f.read()
             self.assertEqual(content, b'%PDF-1.4 Test PDF Content')
+        with open(saved_files['json'], 'r') as f:
+            data = json.load(f)
+            # 'pdf_content' should be Base64 encoded
+            if 'pdf_content' in data:
+                data['pdf_content'] = base64.b64decode(data['pdf_content'])
+            self.assertEqual(data, self.report_data)
 
     def test_save_json_only(self):
         saved_files = save_report(self.report_data, self.username, 'json')

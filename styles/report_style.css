@@ -71,6 +71,13 @@ ul {
     font-size: 10pt;
 }
 
+/* Ensures sections 5 and 6 stay on a single page */
+.page-break-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid; /* For newer browsers */
+    padding: 20px; /* Optional: add padding for visual spacing */
+}
+
 @media print {
     .page {
         page-break-after: always;

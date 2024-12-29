@@ -47,13 +47,21 @@ def run_web_mode():
         app.run(debug=False, host='127.0.0.1', port=5000)
 
 if __name__ == "__main__":
-    mode = input("Choose mode (terminal/web): ").lower()
-
-    if mode == "terminal":
-        use_test = input("Use test data? (y/n): ").lower() == 'y'
-        run_terminal_mode(use_test_data=use_test)
-    elif mode == "web":
-        run_web_mode()
+    print("Starting BF Estimator...")
+    
+    # Check if mode is provided as command line argument
+    if len(sys.argv) > 1:
+        mode = sys.argv[1].lower()
+        if mode == "web":
+            print("Initializing web interface...")
+            run_web_mode()
+        elif mode == "terminal":
+            use_test = input("Use test data? (y/n): ").lower() == 'y'
+            run_terminal_mode(use_test_data=use_test)
+        else:
+            print("Invalid mode. Please use 'web' or 'terminal'.")
+            sys.exit(1)
     else:
-        print("Invalid mode. Please choose 'terminal' or 'web'.")
-        sys.exit(1)
+        # Default to web mode if no argument provided
+        print("Initializing web interface...")
+        run_web_mode()

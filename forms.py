@@ -5,13 +5,22 @@ from wtforms import StringField, FloatField, SelectField, BooleanField, DateFiel
 from wtforms.validators import DataRequired, NumberRange, Optional
 
 class ReportForm(FlaskForm):
+    class Meta:
+        csrf = True  # Enable CSRF protection
     name = StringField('Name', validators=[DataRequired()])
     current_weight = FloatField('Current Weight (lbs)', validators=[DataRequired(), NumberRange(min=0)])
     current_bf = FloatField('Current Body Fat (%)', validators=[DataRequired(), NumberRange(min=0, max=100)])
     goal_weight = FloatField('Goal Weight (lbs)', validators=[DataRequired(), NumberRange(min=0)])
     goal_bf = FloatField('Goal Body Fat (%)', validators=[DataRequired(), NumberRange(min=0, max=100)])
-    height_feet = FloatField('Height - Feet', validators=[DataRequired(), NumberRange(min=0)])
-    height_inches = FloatField('Height - Inches', validators=[DataRequired(), NumberRange(min=0, max=11)])
+    height_feet = SelectField('Height - Feet', choices=[
+        ('4', '4'),
+        ('5', '5'),
+        ('6', '6'),
+        ('7', '7')
+    ], validators=[DataRequired()])
+    height_inches = SelectField('Height - Inches', choices=[
+        (str(i), str(i)) for i in range(12)
+    ], validators=[DataRequired()])
     protein_intake = FloatField('Protein Intake (g)', validators=[DataRequired(), NumberRange(min=0)])
     activity_level = SelectField('Activity Level', choices=[
         ('1', 'Sedentary'),
@@ -20,7 +29,16 @@ class ReportForm(FlaskForm):
         ('4', 'Very Active'),
         ('5', 'Extra Active')
     ], validators=[DataRequired()])
-    workout_days = FloatField('Workout Days per Week', validators=[DataRequired(), NumberRange(min=0, max=7)])
+    workout_days = SelectField('Workout Days per Week', choices=[
+        ('0', '0'),
+        ('1', '1'),
+        ('2', '2'),
+        ('3', '3'),
+        ('4', '4'),
+        ('5', '5'),
+        ('6', '6'),
+        ('7', '7')
+    ], validators=[DataRequired()])
     resistance_training = BooleanField('Resistance Training')
     is_athlete = BooleanField('Is an Athlete')
     workout_type = SelectField('Workout Type', choices=[

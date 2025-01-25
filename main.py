@@ -3,7 +3,7 @@
 # main.py
 # Author: Tiran Ronelle Winston
 # Created: 09/08/24
-# Last Modified: [Today's Date]
+# Last Modified: 01/25/25
 # Description: This script serves as the main entry point for the Weight Loss Predictor program. It handles user interaction, processes data inputs, and generates predictions for weight loss progressions based on various fitness and health parameters. The program can run in test mode using predefined test data or interactively gather user inputs for predictions.
 # Usage: Run this script directly to start the Weight Loss Predictor. Use the '--test' flag to run with test data instead of interactive user input.
 # Dependencies: Requires the following modules: calculations, report_generation, test_data, user_interaction, utils, os, sys, datetime, warnings, contextlib, logging
@@ -34,8 +34,6 @@ import logging
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
-# Configure logging for debugging and tracking program execution
-
 @contextmanager
 def suppress_stderr():
     """
@@ -51,8 +49,9 @@ def suppress_stderr():
             sys.stderr = old_stderr
 
 def run_user_interaction(use_test_data=False, user_data=None):
-    # [Function description and initial code remain the same]
-
+    """
+    Handle user interaction for data input.
+    """
     # Gather user input for various fitness and health parameters.
     name = input("Enter your name: ")
     current_weight = get_float_input("Enter your current weight in lbs: ")
@@ -122,6 +121,9 @@ def run_user_interaction(use_test_data=False, user_data=None):
     # Determine if the user can be classified as a bodybuilder based on workout type and experience level.
     is_bodybuilder = workout_type_str == "Bodybuilding" and experience_level_str in ['Intermediate (2-4 years)', 'Advanced (4-10 years)', 'Elite (10+ years)']
 
+    # Calculate age from date of birth
+    age = calculate_age(datetime.strptime(dob, "%m%d%y"), datetime.strptime(start_date, "%m%d%y"))
+
     # Prepare initial data dictionary to store all gathered inputs and calculated scores.
     initial_data = {
         'name': name,
@@ -132,6 +134,7 @@ def run_user_interaction(use_test_data=False, user_data=None):
         'start_date': start_date,
         'end_date': end_date,
         'dob': dob,
+        'age': age,
         'gender': gender,
         'height_feet': height_feet,
         'height_inches': height_inches,
@@ -169,6 +172,9 @@ def run_user_interaction(use_test_data=False, user_data=None):
     return progression, initial_data
 
 def process_test_data(data):
+    """
+    Process test data for weight loss prediction.
+    """
     logger.debug(f"Processing test data: {data}")
 
     # Map workout type codes to strings
@@ -216,6 +222,11 @@ def process_test_data(data):
             return date_value
         return datetime.strptime(date_value, "%m%d%y")
 
+    # Calculate age from date of birth
+    start_date = parse_date(data['start_date'])
+    dob = parse_date(data['dob'])
+    age = calculate_age(dob, start_date)
+
     # Prepare processed data dictionary
     processed_data = {
         'name': data['name'],
@@ -223,9 +234,10 @@ def process_test_data(data):
         'current_bf': data['current_bf'],
         'goal_weight': data['goal_weight'],
         'goal_bf': data['goal_bf'],
-        'start_date': parse_date(data['start_date']),
+        'start_date': start_date,
         'end_date': parse_date(data['end_date']),
-        'dob': parse_date(data['dob']),
+        'dob': dob,
+        'age': age,
         'gender': data['gender'],
         'height_feet': data['height_feet'],
         'height_inches': data['height_inches'],
@@ -284,51 +296,6 @@ def get_activity_level_description(activity_level):
     }
     return activity_levels.get(int(activity_level), "Unknown")
 
-def print_summary(progression, initial_data):
-    """
-    Print a summary of the weight loss journey and save reports.
-    Returns the saved files dictionary.
-    """
-    # Generate report
-    report_data = generate_comprehensive_report(progression, initial_data)
-    
-    # Save report files in markdown format first
-    saved_files = save_report(report_data, initial_data['name'], 'md')
-    if 'md' in saved_files:
-        print(f"\nMarkdown report saved to: {saved_files['md']}")
-    
-    # Then try to save PDF format
-    try:
-        pdf_files = save_report(report_data, initial_data['name'], 'pdf')
-        if pdf_files and 'pdf' in pdf_files:
-            saved_files['pdf'] = pdf_files['pdf']
-            print(f"PDF report saved to: {pdf_files['pdf']}")
-    except Exception as e:
-        logger.error(f"Error saving PDF report: {e}")
-    
-    # Print summary
-    print("\nWeight Loss Journey Summary:")
-    print(f"Initial Weight: {report_data['initial_weight']:.1f} lbs")
-    print(f"Final Weight: {report_data['final_weight']:.1f} lbs")
-    print(f"Total Weight Loss: {report_data['total_weight_loss']:.1f} lbs")
-    print(f"Initial Body Fat: {report_data['initial_body_fat']:.1f}%")
-    print(f"Final Body Fat: {report_data['final_body_fat']:.1f}%")
-    print(f"Total Body Fat Reduction: {report_data['total_bf_loss']:.1f}%")
-    print(f"Total Muscle Gain: {report_data['total_muscle_gain']:.1f} lbs")
-    
-    # Log saved files
-    if saved_files:
-        if 'md' in saved_files:
-            print(f"\nMarkdown report saved to: {saved_files['md']}")
-        if 'pdf' in saved_files:
-            print(f"PDF report saved to: {saved_files['pdf']}")
-        if 'json' in saved_files:
-            logger.info(f"JSON data saved to: {saved_files['json']}")
-    else:
-        logger.warning("No reports were saved.")
-    
-    return saved_files
-
 def main():
     """
     Main function that initializes the program, suppresses unwanted stderr output,
@@ -357,7 +324,7 @@ if __name__ == "__main__":
     main()
 
 # --- Footer ---
-# Status of last Update: Corrected handling of experience_level in run_user_interaction and process_test_data functions
+# Status: Development
 # Contact: mambamental3mil@gmail.com
 # © 2024 Mamba Matrix Solutions LLC. All rights reserved.
 # --- End of File ---

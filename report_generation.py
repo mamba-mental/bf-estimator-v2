@@ -4,8 +4,6 @@ import datetime
 import json
 import base64
 import io
-import matplotlib
-matplotlib.use('Agg')  # Set backend before importing pyplot
 import matplotlib.pyplot as plt
 from weasyprint import HTML, CSS
 from jinja2 import Environment, FileSystemLoader
@@ -121,9 +119,6 @@ def generate_comprehensive_report(progression, initial_data):
             'time_to_six_pack': bf_info[1]
         })
 
-    # Close any existing matplotlib figures
-    plt.close('all')
-
     report_data['weight_progress_chart'] = generate_weight_progress_chart(report_data['weekly_progress'])
     report_data['body_composition_chart'] = generate_body_composition_chart(report_data['body_composition_changes'])
 
@@ -145,9 +140,6 @@ def save_report(report_data, username, save_format):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     base_filename = f"{username.replace(' ', '_')}_{timestamp}"
     results_folder = os.path.abspath('results')  # Absolute path for consistency
-
-    # Create results directory if it doesn't exist
-    os.makedirs(results_folder, exist_ok=True)
 
     # Save weight progress chart
     weight_chart_filename = os.path.join(results_folder, f"weight_progress_chart_{timestamp}.png")
@@ -391,7 +383,6 @@ def generate_weight_progress_chart(weekly_progress):
     img_buffer = io.BytesIO()
     plt.savefig(img_buffer, format='png')
     img_buffer.seek(0)
-    plt.close()  # Close the figure to free memory
     return base64.b64encode(img_buffer.getvalue()).decode()
 
 def generate_body_composition_chart(body_composition_changes):
@@ -422,7 +413,6 @@ def generate_body_composition_chart(body_composition_changes):
     img_buffer = io.BytesIO()
     plt.savefig(img_buffer, format='png')
     img_buffer.seek(0)
-    plt.close()  # Close the figure to free memory
     return base64.b64encode(img_buffer.getvalue()).decode()
 
 def get_score_description(score):

@@ -9,9 +9,48 @@
         .page-break {
             page-break-before: always;
         }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .grid-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .charts-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .chart {
+            flex: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .supplemental-info {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
     </style>
 </head>
 <body>
+    <!-- Page 1 -->
     <header>
         <h1>Body Fat and Weight Loss Calculator Report - {{ name }}</h1>
         <p>Report Date: {{ report_date }}</p>
@@ -52,11 +91,11 @@
         </table>
     </section>
 
+    <!-- Page 2 -->
     <div class="page-break"></div>
-
+    
     <section>
         <h2>4. Current Metabolic Profile</h2>
-        <p>These calculations provide insight into your body's energy requirements and how they will change over time:</p>
         <table>
             <tr><td>Base Metabolic Rate (RMR):</td><td>{{ "%.2f"|format(initial_rmr) }} cal/day</td></tr>
             <tr><td>Total Daily Energy Expenditure (TDEE):</td><td>{{ "%.2f"|format(initial_tdee) }} cal/day</td></tr>
@@ -64,11 +103,20 @@
             <tr><td>Non-Exercise Activity Thermogenesis (NEAT):</td><td>{{ "%.2f"|format(neat) }} cal/day</td></tr>
             <tr><td>Recommended Daily Calorie Intake:</td><td>{{ "%.2f"|format(initial_daily_calorie_intake) }} cal/day</td></tr>
         </table>
+        
+        <div class="supplemental-info">
+            <h3>Understanding Your Metabolic Profile:</h3>
+            <ul>
+                <li><strong>RMR (Resting Metabolic Rate):</strong> Your body burns {{ "%.2f"|format(initial_rmr) }} calories daily at rest. This is calculated using the Mifflin-St Jeor equation, adjusted for your body composition.</li>
+                <li><strong>TDEE (Total Daily Energy Expenditure):</strong> Based on your activity level, you burn approximately {{ "%.2f"|format(initial_tdee) }} calories per day.</li>
+                <li><strong>TEF (Thermic Effect of Food):</strong> You burn about {{ "%.2f"|format(tef) }} calories digesting food, particularly protein.</li>
+                <li><strong>NEAT:</strong> Your daily activities burn approximately {{ "%.2f"|format(neat) }} additional calories.</li>
+            </ul>
+        </div>
     </section>
 
     <section>
         <h2>5. Workout Analysis</h2>
-        <p>This analysis provides insight into your workout routine and its effectiveness:</p>
         <table>
             <tr><td>Type:</td><td>{{ workout_type }}</td></tr>
             <tr><td>Frequency:</td><td>{{ workout_frequency }} days/week</td></tr>
@@ -76,25 +124,39 @@
             <tr><td>Intensity Score:</td><td>{{ "%.2f"|format(intensity_score) }} - {{ get_score_description(intensity_score) }}</td></tr>
             <tr><td>Frequency Score:</td><td>{{ "%.2f"|format(frequency_score) }} - {{ get_score_description(frequency_score) }}</td></tr>
         </table>
+
+        <div class="supplemental-info">
+            <h3>Impact on Your Caloric Needs:</h3>
+            <ul>
+                <li><strong>Volume Score {{ "%.2f"|format(volume_score) }}:</strong> Your training volume contributes approximately {{ "%.2f"|format(volume_score * 500) }} additional calories to your daily expenditure.</li>
+                <li><strong>Intensity Score {{ "%.2f"|format(intensity_score) }}:</strong> Your training intensity increases your metabolic rate by about {{ "%.2f"|format(intensity_score * 15) }}% for up to 48 hours post-workout.</li>
+                <li><strong>Frequency Score {{ "%.2f"|format(frequency_score) }}:</strong> Training {{ workout_frequency }} days per week optimizes your caloric burn and recovery periods.</li>
+            </ul>
+        </div>
     </section>
 
+    <!-- Page 3 -->
     <div class="page-break"></div>
 
     <section>
         <h2>6. Predicted Progress Charts</h2>
-        <div class="chart">
-            <h3>Predicted Weight Changes</h3>
-            <img src="data:image/png;base64,{{ weight_progress_chart }}" alt="Weight Progress Chart">
-        </div>
-        <div class="chart">
-            <h3>Predicted Body Fat Changes</h3>
-            <img src="data:image/png;base64,{{ body_composition_chart }}" alt="Body Composition Chart">
+        <div class="charts-container">
+            <div class="chart">
+                <h3>Predicted Weight Changes</h3>
+                <img src="data:image/png;base64,{{ weight_progress_chart }}" alt="Weight Progress Chart">
+            </div>
+            <div class="chart">
+                <h3>Predicted Body Fat Changes</h3>
+                <img src="data:image/png;base64,{{ body_composition_chart }}" alt="Body Composition Chart">
+            </div>
         </div>
     </section>
 
+    <!-- Page 4 -->
+    <div class="page-break"></div>
+
     <section>
         <h2>7. Weekly Progress Forecast</h2>
-        <p>This table shows your projected weekly changes:</p>
         <table class="small-table">
             <tr>
                 <th>Date</th>
@@ -149,9 +211,11 @@
         </table>
     </section>
 
+    <!-- Page 5 -->
+    <div class="page-break"></div>
+
     <section>
         <h2>9. Expected Results</h2>
-        <p>You can expect to achieve:</p>
         <table>
             <tr><td>Total Weight Loss:</td><td>{{ "%.2f"|format(total_weight_loss) }} lbs</td></tr>
             <tr><td>Fat Loss:</td><td>{{ "%.2f"|format(total_bf_loss) }}%</td></tr>
@@ -167,7 +231,6 @@
 
     <section>
         <h2>10. Metabolic Adaptation Forecast</h2>
-        <p>Your metabolism will adapt throughout this journey:</p>
         <table>
             <tr><td>Initial Week:</td><td>{{ "%.2f"|format(week_1_adaptation) }} multiplier</td></tr>
             <tr><td>Final Week:</td><td>{{ "%.2f"|format(final_week_adaptation) }} multiplier</td></tr>
@@ -178,88 +241,356 @@
 
     <section>
         <h2>11. Final Phase Targets</h2>
-        <p>To maintain your results at the end of your journey:</p>
         <table>
             <tr><td>Maintenance Calories:</td><td>{{ "%.2f"|format(final_tdee) }} calories/day</td></tr>
             <tr><td>Weekly Energy Output:</td><td>{{ "%.2f"|format(final_weekly_caloric_output) }} calories</td></tr>
         </table>
     </section>
 
+    <!-- Page 6+ -->
+    <div class="page-break"></div>
+
     <section>
-        <h2>12. Terms and Definitions Reference</h2>
+        <h2>12. Comprehensive Reference Guide</h2>
         
-        <h3>Activity Levels and Their Impact:</h3>
-        <ul>
-            <li><strong>Sedentary:</strong> Little to no exercise, desk job (multiplier: 1.2)</li>
-            <li><strong>Lightly Active:</strong> Light exercise 1-3 days/week (multiplier: 1.375)</li>
-            <li><strong>Moderately Active:</strong> Moderate exercise 3-5 days/week (multiplier: 1.55)</li>
-            <li><strong>Very Active:</strong> Heavy exercise 6-7 days/week (multiplier: 1.725)</li>
-            <li><strong>Extremely Active:</strong> Very heavy exercise, physical job (multiplier: 1.9)</li>
-        </ul>
+        <div class="grid-container">
+            <div class="grid-item full-width">
+                <h3>Activity Levels and Caloric Impact</h3>
+                <table>
+                    <tr>
+                        <th>Level</th>
+                        <th>Description</th>
+                        <th>TDEE Multiplier</th>
+                        <th>Daily Caloric Impact</th>
+                        <th>Example Activities</th>
+                    </tr>
+                    <tr>
+                        <td>Sedentary</td>
+                        <td>Little to no exercise, desk job</td>
+                        <td>1.2</td>
+                        <td>+20% above RMR</td>
+                        <td>Office work, driving, watching TV</td>
+                    </tr>
+                    <tr>
+                        <td>Lightly Active</td>
+                        <td>Light exercise 1-3 days/week</td>
+                        <td>1.375</td>
+                        <td>+37.5% above RMR</td>
+                        <td>Walking, light gardening, yoga</td>
+                    </tr>
+                    <tr>
+                        <td>Moderately Active</td>
+                        <td>Moderate exercise 3-5 days/week</td>
+                        <td>1.55</td>
+                        <td>+55% above RMR</td>
+                        <td>Jogging, cycling, recreational sports</td>
+                    </tr>
+                    <tr>
+                        <td>Very Active</td>
+                        <td>Heavy exercise 6-7 days/week</td>
+                        <td>1.725</td>
+                        <td>+72.5% above RMR</td>
+                        <td>Construction work, competitive sports</td>
+                    </tr>
+                    <tr>
+                        <td>Extremely Active</td>
+                        <td>Very heavy exercise, physical job</td>
+                        <td>1.9</td>
+                        <td>+90% above RMR</td>
+                        <td>Professional athletes, heavy manual labor</td>
+                    </tr>
+                </table>
+            </div>
 
-        <h3>Training Experience Levels:</h3>
-        <ul>
-            <li><strong>Beginner (0-2 years):</strong> Higher potential for muscle gain (0.5-1% body weight/month)</li>
-            <li><strong>Intermediate (2-4 years):</strong> Moderate gains (0.25-0.5% body weight/month)</li>
-            <li><strong>Advanced (4+ years):</strong> Slower gains (0.125-0.25% body weight/month)</li>
-        </ul>
+            <div class="grid-item full-width">
+                <h3>Training Experience and Muscle Gain Potential</h3>
+                <table>
+                    <tr>
+                        <th>Level</th>
+                        <th>Years of Training</th>
+                        <th>Monthly Muscle Gain</th>
+                        <th>Caloric Requirements</th>
+                        <th>Recovery Needs</th>
+                    </tr>
+                    <tr>
+                        <td>Beginner</td>
+                        <td>0-2 years</td>
+                        <td>0.5-1% body weight</td>
+                        <td>+500 cal/day surplus</td>
+                        <td>24-36 hours between sessions</td>
+                    </tr>
+                    <tr>
+                        <td>Intermediate</td>
+                        <td>2-4 years</td>
+                        <td>0.25-0.5% body weight</td>
+                        <td>+300-400 cal/day surplus</td>
+                        <td>36-48 hours between sessions</td>
+                    </tr>
+                    <tr>
+                        <td>Advanced</td>
+                        <td>4+ years</td>
+                        <td>0.125-0.25% body weight</td>
+                        <td>+200-300 cal/day surplus</td>
+                        <td>48-72 hours between sessions</td>
+                    </tr>
+                </table>
+            </div>
 
-        <h3>Workout Types and Their Effects:</h3>
-        <ul>
-            <li><strong>Bodybuilding:</strong> Optimized for muscle growth and aesthetics</li>
-            <li><strong>Strength Training:</strong> Focus on increasing maximal strength</li>
-            <li><strong>Powerlifting:</strong> Specialized in squat, bench press, and deadlift</li>
-            <li><strong>Olympic Weightlifting:</strong> Technical lifts for power development</li>
-            <li><strong>CrossFit:</strong> High-intensity functional movements</li>
-            <li><strong>Calisthenics:</strong> Bodyweight exercises for strength and control</li>
-        </ul>
+            <div class="grid-item full-width">
+                <h3>Workout Types and Metabolic Impact</h3>
+                <table>
+                    <tr>
+                        <th>Type</th>
+                        <th>Primary Focus</th>
+                        <th>Caloric Burn</th>
+                        <th>EPOC Effect</th>
+                        <th>Recovery Demand</th>
+                    </tr>
+                    <tr>
+                        <td>Bodybuilding</td>
+                        <td>Muscle growth and aesthetics</td>
+                        <td>600-800 cal/session</td>
+                        <td>24-36 hours</td>
+                        <td>High protein needs (1g/lb)</td>
+                    </tr>
+                    <tr>
+                        <td>Strength Training</td>
+                        <td>Maximal strength</td>
+                        <td>400-600 cal/session</td>
+                        <td>24-48 hours</td>
+                        <td>High CNS recovery needs</td>
+                    </tr>
+                    <tr>
+                        <td>Powerlifting</td>
+                        <td>Specific lift performance</td>
+                        <td>500-700 cal/session</td>
+                        <td>36-48 hours</td>
+                        <td>Very high CNS demands</td>
+                    </tr>
+                    <tr>
+                        <td>Olympic Weightlifting</td>
+                        <td>Power and technique</td>
+                        <td>600-800 cal/session</td>
+                        <td>24-36 hours</td>
+                        <td>Technical recovery focus</td>
+                    </tr>
+                    <tr>
+                        <td>CrossFit</td>
+                        <td>Overall fitness</td>
+                        <td>800-1000 cal/session</td>
+                        <td>36-48 hours</td>
+                        <td>High systemic demands</td>
+                    </tr>
+                    <tr>
+                        <td>Calisthenics</td>
+                        <td>Bodyweight control</td>
+                        <td>400-600 cal/session</td>
+                        <td>24-36 hours</td>
+                        <td>Joint/tendon focus</td>
+                    </tr>
+                </table>
+            </div>
 
-        <h3>Resistance Training Impact:</h3>
-        <ul>
-            <li><strong>With Resistance Training:</strong> Higher muscle preservation (90-100%)</li>
-            <li><strong>Without Resistance Training:</strong> Lower muscle preservation (60-80%)</li>
-        </ul>
+            <div class="grid-item">
+                <h3>Resistance Training Impact</h3>
+                <table>
+                    <tr>
+                        <th>Status</th>
+                        <th>Muscle Preservation</th>
+                        <th>Metabolic Impact</th>
+                    </tr>
+                    <tr>
+                        <td>With RT</td>
+                        <td>90-100%</td>
+                        <td>+100-300 cal/day</td>
+                    </tr>
+                    <tr>
+                        <td>Without RT</td>
+                        <td>60-80%</td>
+                        <td>No additional benefit</td>
+                    </tr>
+                </table>
+                <p><strong>Impact on Calculations:</strong> Resistance training increases your daily caloric needs by 100-300 calories through increased muscle mass and EPOC (Excess Post-exercise Oxygen Consumption).</p>
+            </div>
 
-        <h3>Athlete Status Effects:</h3>
-        <ul>
-            <li><strong>Athlete:</strong> Higher metabolic rate, better nutrient partitioning</li>
-            <li><strong>Non-Athlete:</strong> Standard metabolic calculations apply</li>
-        </ul>
+            <div class="grid-item">
+                <h3>Athlete Status Effects</h3>
+                <table>
+                    <tr>
+                        <th>Status</th>
+                        <th>Metabolic Rate</th>
+                        <th>Nutrient Partitioning</th>
+                    </tr>
+                    <tr>
+                        <td>Athlete</td>
+                        <td>+10-15% higher</td>
+                        <td>Enhanced efficiency</td>
+                    </tr>
+                    <tr>
+                        <td>Non-Athlete</td>
+                        <td>Standard</td>
+                        <td>Normal efficiency</td>
+                    </tr>
+                </table>
+                <p><strong>Impact on Calculations:</strong> Athletic status can increase your TDEE by 10-15% due to enhanced metabolic efficiency and muscle mass.</p>
+            </div>
 
-        <h3>Workout Analysis Metrics:</h3>
-        <ul>
-            <li><strong>Volume Score:</strong> Total work done (sets × reps × weight)</li>
-            <li><strong>Intensity Score:</strong> Average weight relative to 1RM</li>
-            <li><strong>Frequency Score:</strong> Training frequency per muscle group</li>
-        </ul>
+            <div class="grid-item">
+                <h3>Volume Score Components</h3>
+                <table>
+                    <tr>
+                        <th>Score Range</th>
+                        <th>Sets per Muscle</th>
+                        <th>Weekly Volume</th>
+                    </tr>
+                    <tr>
+                        <td>0.0-0.2</td>
+                        <td>1-5 sets</td>
+                        <td>Low stimulus</td>
+                    </tr>
+                    <tr>
+                        <td>0.2-0.4</td>
+                        <td>6-10 sets</td>
+                        <td>Maintenance</td>
+                    </tr>
+                    <tr>
+                        <td>0.4-0.6</td>
+                        <td>10-15 sets</td>
+                        <td>Growth stimulus</td>
+                    </tr>
+                    <tr>
+                        <td>0.6-0.8</td>
+                        <td>15-20 sets</td>
+                        <td>Optimal growth</td>
+                    </tr>
+                    <tr>
+                        <td>0.8-1.0</td>
+                        <td>20+ sets</td>
+                        <td>Maximum stimulus</td>
+                    </tr>
+                </table>
+            </div>
 
-        <h3>Caloric Components:</h3>
-        <ul>
-            <li><strong>RMR (Resting Metabolic Rate):</strong> Calories burned at complete rest</li>
-            <li><strong>TDEE (Total Daily Energy Expenditure):</strong> Total calories burned per day</li>
-            <li><strong>TEF (Thermic Effect of Food):</strong> Calories burned digesting food (10-15% of total intake)</li>
-            <li><strong>NEAT (Non-Exercise Activity Thermogenesis):</strong> Calories burned through daily activities</li>
-        </ul>
+            <div class="grid-item">
+                <h3>Intensity Score Impact</h3>
+                <table>
+                    <tr>
+                        <th>Score Range</th>
+                        <th>% of 1RM</th>
+                        <th>Rep Range</th>
+                    </tr>
+                    <tr>
+                        <td>0.0-0.2</td>
+                        <td>30-50%</td>
+                        <td>15+ reps</td>
+                    </tr>
+                    <tr>
+                        <td>0.2-0.4</td>
+                        <td>50-65%</td>
+                        <td>12-15 reps</td>
+                    </tr>
+                    <tr>
+                        <td>0.4-0.6</td>
+                        <td>65-75%</td>
+                        <td>8-12 reps</td>
+                    </tr>
+                    <tr>
+                        <td>0.6-0.8</td>
+                        <td>75-85%</td>
+                        <td>5-8 reps</td>
+                    </tr>
+                    <tr>
+                        <td>0.8-1.0</td>
+                        <td>85%+</td>
+                        <td>1-5 reps</td>
+                    </tr>
+                </table>
+            </div>
 
-        <h3>Score Interpretations:</h3>
-        <ul>
-            <li><strong>Very Low (0.0-0.2):</strong> Significant room for improvement</li>
-            <li><strong>Low (0.2-0.4):</strong> Below optimal range</li>
-            <li><strong>Moderate (0.4-0.6):</strong> Average effectiveness</li>
-            <li><strong>High (0.6-0.8):</strong> Optimal range</li>
-            <li><strong>Very High (0.8-1.0):</strong> Maximum effectiveness</li>
-        </ul>
+            <div class="grid-item">
+                <h3>Frequency Score Effects</h3>
+                <table>
+                    <tr>
+                        <th>Score Range</th>
+                        <th>Sessions/Week</th>
+                        <th>Recovery Time</th>
+                    </tr>
+                    <tr>
+                        <td>0.0-0.2</td>
+                        <td>1x/week</td>
+                        <td>7 days</td>
+                    </tr>
+                    <tr>
+                        <td>0.2-0.4</td>
+                        <td>2x/week</td>
+                        <td>3-4 days</td>
+                    </tr>
+                    <tr>
+                        <td>0.4-0.6</td>
+                        <td>3x/week</td>
+                        <td>2-3 days</td>
+                    </tr>
+                    <tr>
+                        <td>0.6-0.8</td>
+                        <td>4x/week</td>
+                        <td>1-2 days</td>
+                    </tr>
+                    <tr>
+                        <td>0.8-1.0</td>
+                        <td>5+x/week</td>
+                        <td><1 day</td>
+                    </tr>
+                </table>
+            </div>
 
-        <h3>Calculation Formulas:</h3>
-        <ul>
-            <li><strong>RMR:</strong> Based on Mifflin-St Jeor equation with adjustments for body composition</li>
-            <li><strong>TDEE:</strong> RMR × Activity Multiplier + Exercise Calories</li>
-            <li><strong>Caloric Deficit:</strong> TDEE - Daily Calorie Intake</li>
-            <li><strong>Weekly Deficit:</strong> Daily Deficit × 7</li>
-            <li><strong>Fat Loss Rate:</strong> Weekly Deficit ÷ 3500 (calories per pound of fat)</li>
-            <li><strong>Muscle Gain Rate:</strong> Based on training experience and current lean mass</li>
-            <li><strong>Metabolic Adaptation:</strong> Progressive reduction in TDEE based on deficit duration</li>
-        </ul>
+            <div class="grid-item full-width">
+                <h3>Calculation Formulas and Methodology</h3>
+                <table>
+                    <tr>
+                        <th>Component</th>
+                        <th>Formula</th>
+                        <th>Variables</th>
+                        <th>Example</th>
+                    </tr>
+                    <tr>
+                        <td>RMR (Male)</td>
+                        <td>(10 × weight kg) + (6.25 × height cm) - (5 × age) + 5</td>
+                        <td>Weight, Height, Age</td>
+                        <td>70kg man: 1,745 cal</td>
+                    </tr>
+                    <tr>
+                        <td>RMR (Female)</td>
+                        <td>(10 × weight kg) + (6.25 × height cm) - (5 × age) - 161</td>
+                        <td>Weight, Height, Age</td>
+                        <td>60kg woman: 1,374 cal</td>
+                    </tr>
+                    <tr>
+                        <td>TDEE</td>
+                        <td>RMR × Activity Multiplier + Exercise Calories</td>
+                        <td>RMR, Activity Level</td>
+                        <td>1,745 × 1.55 = 2,705 cal</td>
+                    </tr>
+                    <tr>
+                        <td>Caloric Deficit</td>
+                        <td>TDEE - Daily Intake</td>
+                        <td>TDEE, Target Loss</td>
+                        <td>2,705 - 2,205 = 500 cal</td>
+                    </tr>
+                    <tr>
+                        <td>Weekly Fat Loss</td>
+                        <td>(Weekly Deficit) ÷ 3,500</td>
+                        <td>Daily Deficit × 7</td>
+                        <td>(500 × 7) ÷ 3,500 = 1 lb</td>
+                    </tr>
+                    <tr>
+                        <td>Muscle Gain</td>
+                        <td>(Body Weight × Experience Factor)</td>
+                        <td>Weight, Training Level</td>
+                        <td>70kg × 0.01 = 0.7kg/month</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
     </section>
 </body>
 </html>

@@ -284,8 +284,6 @@ def get_activity_level_description(activity_level):
     }
     return activity_levels.get(int(activity_level), "Unknown")
 
-<<<<<<< Updated upstream:main.py
-=======
 def print_summary(progression, initial_data):
     """
     Print a summary of the weight loss journey and save reports.
@@ -331,7 +329,6 @@ def print_summary(progression, initial_data):
     
     return saved_files
 
->>>>>>> Stashed changes:backend/main.py
 def main():
     """
     Main function that initializes the program, suppresses unwanted stderr output,

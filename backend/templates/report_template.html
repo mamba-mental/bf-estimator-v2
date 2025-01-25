@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Weight Loss Journey Report</title>
+    <style>
+        @page {
+            margin: 2cm;
+            @top-center {
+                content: "Weight Loss Journey Report";
+                font-family: Arial, sans-serif;
+                font-size: 10pt;
+            }
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: Arial, sans-serif;
+                font-size: 10pt;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Your Personalized Weight Loss Journey Report</h1>
+    <p class="date">Generated on: {{ report.report_date }}</p>
+
+    <h2>1. Personal Profile</h2>
+    <table>
+        <tr>
+            <td>Name:</td>
+            <td>{{ report.name }}</td>
+        </tr>
+        <tr>
+            <td>Start Date:</td>
+            <td>{{ report.start_date }}</td>
+        </tr>
+        <tr>
+            <td>End Date:</td>
+            <td>{{ report.end_date }}</td>
+        </tr>
+        <tr>
+            <td>Age:</td>
+            <td>{{ report.age }} years</td>
+        </tr>
+        <tr>
+            <td>Gender:</td>
+            <td>{{ report.gender }}</td>
+        </tr>
+        <tr>
+            <td>Height:</td>
+            <td>{{ report.height }}</td>
+        </tr>
+    </table>
+
+    <h2>2. Metabolic Calculations</h2>
+    <table>
+        <tr>
+            <td>Initial RMR:</td>
+            <td>{{ "%.2f"|format(report.initial_rmr) }} cal/day</td>
+        </tr>
+        <tr>
+            <td>Initial TDEE:</td>
+            <td>{{ "%.2f"|format(report.initial_tdee) }} cal/day</td>
+        </tr>
+        <tr>
+            <td>TEF:</td>
+            <td>{{ "%.1f"|format(report.tef) }} cal/day</td>
+        </tr>
+        <tr>
+            <td>NEAT:</td>
+            <td>{{ "%.1f"|format(report.neat) }} cal/day</td>
+        </tr>
+        <tr>
+            <td>Initial Daily Calorie Intake:</td>
+            <td>{{ "%.2f"|format(report.initial_daily_calorie_intake) }} cal/day</td>
+        </tr>
+    </table>
+
+    <h2>3. Workout Analysis</h2>
+    <table>
+        <tr>
+            <td>Type:</td>
+            <td>{{ report.workout_type }}</td>
+        </tr>
+        <tr>
+            <td>Frequency:</td>
+            <td>{{ report.workout_frequency }}</td>
+        </tr>
+        <tr>
+            <td>Volume Score:</td>
+            <td>{{ report.volume_score }} ({{ report.volume_score_description }})</td>
+        </tr>
+        <tr>
+            <td>Intensity Score:</td>
+            <td>{{ report.intensity_score }} ({{ report.intensity_score_description }})</td>
+        </tr>
+        <tr>
+            <td>Frequency Score:</td>
+            <td>{{ report.frequency_score }} ({{ report.frequency_score_description }})</td>
+        </tr>
+        <tr>
+            <td>Resistance Training:</td>
+            <td>{{ report.resistance_training }}</td>
+        </tr>
+        <tr>
+            <td>Athlete Status:</td>
+            <td>{{ report.athlete_status }}</td>
+        </tr>
+    </table>
+
+    <h2>4. Progress Charts</h2>
+    <div class="chart">
+        <img src="{{ report.weight_progress_chart_path }}" alt="Weight Progress Chart">
+        <p class="caption">Weight Progress Over Time</p>
+    </div>
+    <div class="chart">
+        <img src="{{ report.body_composition_chart_path }}" alt="Body Composition Chart">
+        <p class="caption">Body Fat Percentage Over Time</p>
+    </div>
+
+    <h2>5. Final Results</h2>
+    <table>
+        <tr>
+            <td>Duration:</td>
+            <td>{{ report.total_weeks }} weeks</td>
+        </tr>
+        <tr>
+            <td>Total Weight Loss:</td>
+            <td>{{ "%.2f"|format(report.total_weight_loss) }} lbs</td>
+        </tr>
+        <tr>
+            <td>Total Body Fat Reduction:</td>
+            <td>{{ "%.2f"|format(report.total_bf_loss) }}%</td>
+        </tr>
+        <tr>
+            <td>Final Weight:</td>
+            <td>{{ "%.2f"|format(report.final_weight) }} lbs</td>
+        </tr>
+        <tr>
+            <td>Final Body Fat:</td>
+            <td>{{ "%.2f"|format(report.final_body_fat) }}%</td>
+        </tr>
+        <tr>
+            <td>Average Weekly Weight Loss:</td>
+            <td>{{ "%.2f"|format(report.avg_weekly_loss) }} lbs</td>
+        </tr>
+        <tr>
+            <td>Total Muscle Gain:</td>
+            <td>{{ "%.2f"|format(report.total_muscle_gain) }} lbs</td>
+        </tr>
+    </table>
+
+    <h2>6. Body Fat Category Progression</h2>
+    <h3>Initial Status</h3>
+    <table>
+        <tr>
+            <td>Category:</td>
+            <td>{{ report.initial_body_fat_category }}</td>
+        </tr>
+        <tr>
+            <td>Description:</td>
+            <td>{{ report.initial_body_fat_description }}</td>
+        </tr>
+        <tr>
+            <td>Est. Time to Six-Pack:</td>
+            <td>{{ report.initial_time_to_six_pack }}</td>
+        </tr>
+    </table>
+
+    <h3>Final Status</h3>
+    <table>
+        <tr>
+            <td>Category:</td>
+            <td>{{ report.final_body_fat_category }}</td>
+        </tr>
+        <tr>
+            <td>Description:</td>
+            <td>{{ report.final_body_fat_description }}</td>
+        </tr>
+        <tr>
+            <td>Est. Time to Six-Pack:</td>
+            <td>{{ report.final_time_to_six_pack }}</td>
+        </tr>
+    </table>
+
+    <h2>7. Insights and Recommendations</h2>
+    <ul>
+        <li>Your metabolic rate adapted by {{ "%.1f"|format(report.adaptation_percentage) }}% over the course of your journey.</li>
+        <li>You maintained {{ "%.1f"|format(report.lean_mass_preserved) }}% of your initial lean mass.</li>
+        <li>Your muscle gain rate averaged {{ "%.2f"|format(report.avg_muscle_gain) }} lbs per week.</li>
+        <li>Based on your final body fat percentage, you're now in the {{ report.final_body_fat_category }} category.</li>
+        <li>To maintain your results, consider a daily calorie intake of {{ "%.2f"|format(report.final_tdee) }} calories.</li>
+    </ul>
+
+    <h2>8. Next Steps</h2>
+    <ul>
+        {% for step in report.next_steps %}
+        <li>{{ step }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

@@ -15,9 +15,7 @@ body {
 
 .cover {
     text-align: center;
-    min-height: 100vh; /* Changed from height to min-height */
-    min-height: 100dvh; /* Added for better mobile support */
-    height: 100%; /* Fallback for older browsers */
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -74,5 +72,17 @@ ul {
 @media print {
     .page {
         page-break-after: always;
+    }
+    
+    .page-break {
+        page-break-before: always;
+    }
+    
+    table {
+        page-break-inside: avoid;
+    }
+    
+    img {
+        page-break-inside: avoid;
     }
 }

@@ -80,17 +80,20 @@ def calculate_tdee(weight, age, gender, activity_level, height_cm, is_athlete, p
     # Calculate the Resting Metabolic Rate (RMR) using imported utility function
     rmr = calculate_rmr(weight, age, gender, height_cm, is_athlete)
     
+    # Calculate TEF and NEAT
+    tef = estimate_tef(protein_intake)
+    neat = estimate_neat(job_activity, leisure_activity)
+    
     # Activity factors corresponding to different activity levels (1-5)
     activity_factors = [1.2, 1.375, 1.55, 1.725, 1.9]  # Sedentary to very active
-    tdee = rmr * activity_factors[activity_level - 1]  # Base TDEE calculation based on activity level
-
-    # Add the Thermic Effect of Food (TEF) to TDEE
-    tdee += estimate_tef(protein_intake)
     
-    # Add the Non-Exercise Activity Thermogenesis (NEAT) to TDEE
-    tdee += estimate_neat(job_activity, leisure_activity)
-
-    return tdee
+    # Calculate base TDEE using activity factor
+    base_tdee = rmr * activity_factors[activity_level - 1]
+    
+    # Add TEF and NEAT to get total TDEE
+    total_tdee = base_tdee + tef + neat
+    
+    return total_tdee
 
 # Function to calculate metabolic adaptation during a diet
 # This function estimates how the metabolism adapts over time based on the current week, body fat percentage, and whether the individual is a bodybuilder.
@@ -197,7 +200,9 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
         weekly_deficit_required = weekly_fat_loss_required * 3500  # 1 pound of fat = 3500 calories
         daily_deficit_required = weekly_deficit_required / 7
         min_calories = max(adapted_tdee / 3, 1000)  # Ensure calorie intake doesn't drop too low
+        # Calculate daily calorie intake with a maximum of +300kcal from initial recommended intake
         daily_calorie_intake = max(adapted_tdee - daily_deficit_required, min_calories)
+        daily_calorie_intake = min(daily_calorie_intake, initial_daily_calorie_intake + 300)
 
         # Calculate weekly caloric output, weight loss, and fat/lean mass distribution
         weekly_caloric_output = calculate_weekly_caloric_output(adapted_tdee, daily_calorie_intake)

@@ -42,6 +42,7 @@ matplotlib.rcParams.update({
 
 from weasyprint import HTML, CSS
 from jinja2 import Environment, FileSystemLoader
+from utils import estimate_tef, estimate_neat
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -76,7 +77,7 @@ def generate_weight_progress_chart(weekly_progress):
     """
     Generate a weight progress chart.
     """
-    dates = [datetime.datetime.strptime(week['date'], "%m/%d/%Y") for week in weekly_progress]
+    dates = [datetime.datetime.strptime(week['date'], "%m/%d/%y") for week in weekly_progress]
     weights = [week['weight'] for week in weekly_progress]
 
     fig, ax = plt.subplots()
@@ -102,7 +103,7 @@ def generate_body_composition_chart(body_composition_changes):
     """
     Generate a body composition changes chart.
     """
-    dates = [datetime.datetime.strptime(change['date_reached'], "%m/%d/%Y") for change in body_composition_changes]
+    dates = [datetime.datetime.strptime(change['date_reached'], "%m/%d/%y") for change in body_composition_changes]
     body_fat = [change['body_fat_percentage'] for change in body_composition_changes]
 
     fig, ax = plt.subplots()
@@ -131,8 +132,8 @@ def generate_comprehensive_report(progression, initial_data):
     report_data = {
         'name': initial_data['name'],
         'report_date': datetime.datetime.now().strftime("%m/%d/%Y"),
-        'start_date': datetime.datetime.strptime(progression[0]['date'], "%m%d%y").strftime("%m/%d/%Y"),
-        'end_date': datetime.datetime.strptime(progression[-1]['date'], "%m%d%y").strftime("%m/%d/%Y"),
+        'start_date': datetime.datetime.strptime(progression[0]['date'], "%m%d%y").strftime("%m/%d/%y"),
+        'end_date': datetime.datetime.strptime(progression[-1]['date'], "%m%d%y").strftime("%m/%d/%y"),
         'age': initial_data['age'],
         'gender': 'Male' if initial_data['gender'].lower() == 'm' else 'Female',
         'height': f"{initial_data['height_feet']}'{'0' if initial_data['height_inches'] == 0 else initial_data['height_inches']}\" ({initial_data['height_cm']:.2f} cm)",
@@ -146,8 +147,8 @@ def generate_comprehensive_report(progression, initial_data):
         'experience_level': initial_data['experience_level'],
         'initial_rmr': progression[0]['rmr'],
         'initial_tdee': progression[0]['tdee'],
-        'tef': initial_data.get('tef', 0),
-        'neat': initial_data.get('neat', 0),
+        'tef': estimate_tef(initial_data.get('protein_intake', initial_data.get('daily_protein_intake', 0))),
+        'neat': estimate_neat(initial_data['job_activity'], initial_data['leisure_activity']),
         'initial_daily_calorie_intake': progression[0]['daily_calorie_intake'],
         'workout_type': initial_data['workout_type'],
         'workout_frequency': initial_data['workout_days'],
@@ -160,7 +161,7 @@ def generate_comprehensive_report(progression, initial_data):
         'initial_fat_mass': progression[0]['fat_mass'],
         'weekly_muscle_gain': sum(week['muscle_gain'] for week in progression) / len(progression),
         'weekly_progress': [
-            {**week, 'date': datetime.datetime.strptime(week['date'], "%m%d%y").strftime("%m/%d/%Y")}
+            {**week, 'date': datetime.datetime.strptime(week['date'], "%m%d%y").strftime("%m/%d/%y")}
             for week in progression
         ],
         'week_1_adaptation': 1.0,
@@ -196,7 +197,7 @@ def generate_comprehensive_report(progression, initial_data):
         report_data['body_composition_changes'].append({
             'category': bf_info[0],
             'body_fat_percentage': week['body_fat_percentage'],
-            'date_reached': datetime.datetime.strptime(week['date'], "%m%d%y").strftime("%m/%d/%Y"),
+            'date_reached': datetime.datetime.strptime(week['date'], "%m%d%y").strftime("%m/%d/%y"),
             'description': bf_info[2],
             'time_to_six_pack': bf_info[1]
         })
@@ -228,7 +229,7 @@ def save_report(report_data, username, save_format):
     saved_files = {}
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     base_filename = f"{username.replace(' ', '_')}_{timestamp}"
-    results_folder = os.path.abspath('results')  # Absolute path for consistency
+    results_folder = RESULTS_FOLDER  # Use the constant defined at module level
 
     # Ensure results directory exists
     os.makedirs(results_folder, exist_ok=True)
@@ -251,11 +252,17 @@ def save_report(report_data, username, save_format):
         saved_files['markdown'] = markdown_filename
 
     if save_format in ['pdf', 'both']:
-        pdf_filename = os.path.join(results_folder, f"{base_filename}.pdf")
-        pdf_content = report_data.get('pdf_content', b'')
-        with open(pdf_filename, 'wb') as f:
-            f.write(pdf_content)
-        saved_files['pdf'] = pdf_filename
+        try:
+            pdf_filename = os.path.join(results_folder, f"{base_filename}.pdf")
+            pdf_content = report_data.get('pdf_content', b'')
+            if pdf_content:
+                with open(pdf_filename, 'wb') as f:
+                    f.write(pdf_content)
+                saved_files['pdf'] = pdf_filename
+            else:
+                print("PDF generation was not successful, skipping PDF save")
+        except Exception as e:
+            print(f"Error saving PDF: {e}")
 
     if save_format in ['json', 'both']:
         json_filename = os.path.join(results_folder, f"{base_filename}.json")

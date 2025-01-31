@@ -17,8 +17,8 @@ TEST_DATA = {
     'is_athlete': 'n',
     'workout_type': 'Bodybuilding',  # Changed from 1 to 'Bodybuilding'
     'workout_days': 3,
-    'job_activity': 'sedentary',
-    'leisure_activity': 'sedentary',
+    'job_activity': 1,  # 1 = sedentary
+    'leisure_activity': 1,  # 1 = sedentary
     'experience_level': 4,
     'name': 'Mamba Mental'
 }

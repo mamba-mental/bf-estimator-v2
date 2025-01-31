@@ -88,20 +88,20 @@ def run_user_interaction(use_test_data=False, user_data=None):
 
     # Update job_activity and leisure_activity to extract the key
     job_activity_choice = get_choice_input("Select your job activity level:", [
-        ("sedentary", "Mostly sitting (e.g., desk job)"),
-        ("light", "Light activity (e.g., teacher, salesperson)"),
-        ("moderate", "Moderate activity (e.g., construction worker)"),
-        ("active", "Very active (e.g., courier, agriculture)")
+        ("1", "Mostly sitting (e.g., desk job)"),
+        ("2", "Light activity (e.g., teacher, salesperson)"),
+        ("3", "Moderate activity (e.g., construction worker)"),
+        ("4", "Very active (e.g., courier, agriculture)")
     ])
-    job_activity = job_activity_choice[0]  # Extract the key
+    job_activity = int(job_activity_choice[0])  # Convert to integer
 
     leisure_activity_choice = get_choice_input("Select your leisure activity level:", [
-        ("sedentary", "Little to no physical activity"),
-        ("light", "Light physical activity (e.g., walking, gardening)"),
-        ("moderate", "Moderate physical activity (e.g., hiking, dancing)"),
-        ("active", "High physical activity (e.g., sports, intense exercise)")
+        ("1", "Little to no physical activity"),
+        ("2", "Light physical activity (e.g., walking, gardening)"),
+        ("3", "Moderate physical activity (e.g., hiking, dancing)"),
+        ("4", "High physical activity (e.g., sports, intense exercise)")
     ])
-    leisure_activity = leisure_activity_choice[0]  # Extract the key
+    leisure_activity = int(leisure_activity_choice[0])  # Convert to integer
 
     # Get experience level as a tuple (code, description)
     experience_level_choice = get_experience_level_input("Enter your experience level (1-5):")
@@ -252,8 +252,8 @@ def process_test_data(data):
         'is_athlete': data['is_athlete'] == 'y' if isinstance(data['is_athlete'], str) else data['is_athlete'],
         'workout_type': workout_type_str,
         'workout_days': data['workout_days'],
-        'job_activity': data['job_activity'],
-        'leisure_activity': data['leisure_activity'],
+        'job_activity': int(data['job_activity']) if isinstance(data['job_activity'], str) else data['job_activity'],
+        'leisure_activity': int(data['leisure_activity']) if isinstance(data['leisure_activity'], str) else data['leisure_activity'],
         'experience_level': experience_level,
         'volume_score': volume_score,
         'intensity_score': intensity_score,

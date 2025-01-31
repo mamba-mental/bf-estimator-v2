@@ -5,49 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Body Fat and Weight Loss Calculator Report - {{ name }}</title>
-    <style>
-        .page-break {
-            page-break-before: always;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin: 20px 0;
-        }
-        .grid-item {
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .full-width {
-            grid-column: 1 / -1;
-        }
-        .charts-container {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-        }
-        .chart {
-            flex: 1;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-        }
-        th, td {
-            padding: 8px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        .supplemental-info {
-            background-color: #f9f9f9;
-            padding: 15px;
-            margin: 10px 0;
-            border-left: 4px solid #007bff;
-        }
-    </style>
+    <link rel="stylesheet" href="styles/report_style.css">
 </head>
 <body>
     <!-- Page 1 -->
@@ -253,90 +211,49 @@
     <section>
         <h2>12. Comprehensive Reference Guide</h2>
         
-        <div class="grid-container">
-            <div class="grid-item full-width">
-                <h3>Activity Levels and Caloric Impact</h3>
+        <div class="data-container">
+            {% for section in [
+                {
+                    'title': 'Activity Levels and Caloric Impact',
+                    'data': [
+                        ['Sedentary', 'Little to no exercise, desk job', '1.2', '+20% above RMR', 'Office work, driving, watching TV'],
+                        ['Lightly Active', 'Light exercise 1-3 days/week', '1.375', '+37.5% above RMR', 'Walking, light gardening, yoga'],
+                        ['Moderately Active', 'Moderate exercise 3-5 days/week', '1.55', '+55% above RMR', 'Jogging, cycling, recreational sports'],
+                        ['Very Active', 'Heavy exercise 6-7 days/week', '1.725', '+72.5% above RMR', 'Construction work, competitive sports'],
+                        ['Extremely Active', 'Very heavy exercise, physical job', '1.9', '+90% above RMR', 'Professional athletes, heavy manual labor']
+                    ],
+                    'headers': ['Level', 'Description', 'TDEE Multiplier', 'Daily Caloric Impact', 'Example Activities']
+                },
+                {
+                    'title': 'Training Experience and Muscle Gain Potential',
+                    'data': [
+                        ['Beginner', '0-2 years', '0.5-1% body weight', '+500 cal/day surplus', '24-36 hours between sessions'],
+                        ['Intermediate', '2-4 years', '0.25-0.5% body weight', '+300-400 cal/day surplus', '36-48 hours between sessions'],
+                        ['Advanced', '4+ years', '0.125-0.25% body weight', '+200-300 cal/day surplus', '48-72 hours between sessions']
+                    ],
+                    'headers': ['Level', 'Years of Training', 'Monthly Muscle Gain', 'Caloric Requirements', 'Recovery Needs']
+                }
+            ] %}
+            <div class="data-section">
+                <h3>{{ section.title }}</h3>
                 <table>
                     <tr>
-                        <th>Level</th>
-                        <th>Description</th>
-                        <th>TDEE Multiplier</th>
-                        <th>Daily Caloric Impact</th>
-                        <th>Example Activities</th>
+                        {% for header in section.headers %}
+                        <th>{{ header }}</th>
+                        {% endfor %}
                     </tr>
+                    {% for row in section.data %}
                     <tr>
-                        <td>Sedentary</td>
-                        <td>Little to no exercise, desk job</td>
-                        <td>1.2</td>
-                        <td>+20% above RMR</td>
-                        <td>Office work, driving, watching TV</td>
+                        {% for cell in row %}
+                        <td>{{ cell }}</td>
+                        {% endfor %}
                     </tr>
-                    <tr>
-                        <td>Lightly Active</td>
-                        <td>Light exercise 1-3 days/week</td>
-                        <td>1.375</td>
-                        <td>+37.5% above RMR</td>
-                        <td>Walking, light gardening, yoga</td>
-                    </tr>
-                    <tr>
-                        <td>Moderately Active</td>
-                        <td>Moderate exercise 3-5 days/week</td>
-                        <td>1.55</td>
-                        <td>+55% above RMR</td>
-                        <td>Jogging, cycling, recreational sports</td>
-                    </tr>
-                    <tr>
-                        <td>Very Active</td>
-                        <td>Heavy exercise 6-7 days/week</td>
-                        <td>1.725</td>
-                        <td>+72.5% above RMR</td>
-                        <td>Construction work, competitive sports</td>
-                    </tr>
-                    <tr>
-                        <td>Extremely Active</td>
-                        <td>Very heavy exercise, physical job</td>
-                        <td>1.9</td>
-                        <td>+90% above RMR</td>
-                        <td>Professional athletes, heavy manual labor</td>
-                    </tr>
+                    {% endfor %}
                 </table>
             </div>
+            {% endfor %}
 
-            <div class="grid-item full-width">
-                <h3>Training Experience and Muscle Gain Potential</h3>
-                <table>
-                    <tr>
-                        <th>Level</th>
-                        <th>Years of Training</th>
-                        <th>Monthly Muscle Gain</th>
-                        <th>Caloric Requirements</th>
-                        <th>Recovery Needs</th>
-                    </tr>
-                    <tr>
-                        <td>Beginner</td>
-                        <td>0-2 years</td>
-                        <td>0.5-1% body weight</td>
-                        <td>+500 cal/day surplus</td>
-                        <td>24-36 hours between sessions</td>
-                    </tr>
-                    <tr>
-                        <td>Intermediate</td>
-                        <td>2-4 years</td>
-                        <td>0.25-0.5% body weight</td>
-                        <td>+300-400 cal/day surplus</td>
-                        <td>36-48 hours between sessions</td>
-                    </tr>
-                    <tr>
-                        <td>Advanced</td>
-                        <td>4+ years</td>
-                        <td>0.125-0.25% body weight</td>
-                        <td>+200-300 cal/day surplus</td>
-                        <td>48-72 hours between sessions</td>
-                    </tr>
-                </table>
-            </div>
-
-            <div class="grid-item full-width">
+            <div class="data-section">
                 <h3>Workout Types and Metabolic Impact</h3>
                 <table>
                     <tr>
@@ -391,7 +308,7 @@
                 </table>
             </div>
 
-            <div class="grid-item">
+            <div class="data-section">
                 <h3>Resistance Training Impact</h3>
                 <table>
                     <tr>
@@ -413,7 +330,7 @@
                 <p><strong>Impact on Calculations:</strong> Resistance training increases your daily caloric needs by 100-300 calories through increased muscle mass and EPOC (Excess Post-exercise Oxygen Consumption).</p>
             </div>
 
-            <div class="grid-item">
+            <div class="data-section">
                 <h3>Athlete Status Effects</h3>
                 <table>
                     <tr>
@@ -435,7 +352,7 @@
                 <p><strong>Impact on Calculations:</strong> Athletic status can increase your TDEE by 10-15% due to enhanced metabolic efficiency and muscle mass.</p>
             </div>
 
-            <div class="grid-item">
+            <div class="data-section">
                 <h3>Volume Score Components</h3>
                 <table>
                     <tr>
@@ -471,7 +388,7 @@
                 </table>
             </div>
 
-            <div class="grid-item">
+            <div class="data-section">
                 <h3>Intensity Score Impact</h3>
                 <table>
                     <tr>
@@ -507,7 +424,7 @@
                 </table>
             </div>
 
-            <div class="grid-item">
+            <div class="data-section">
                 <h3>Frequency Score Effects</h3>
                 <table>
                     <tr>
@@ -543,7 +460,7 @@
                 </table>
             </div>
 
-            <div class="grid-item full-width">
+            <div class="data-section">
                 <h3>Calculation Formulas and Methodology</h3>
                 <table>
                     <tr>

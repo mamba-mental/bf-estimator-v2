@@ -1,5 +1,5 @@
 @echo off
-echo Setting up Python environment for BF Estimator Terminal Version...
+echo Setting up Python environment for BF Estimator Terminal...
 
 REM Check if Python is installed
 python --version >nul 2>&1
@@ -8,15 +8,6 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-
-REM Check if virtual environment exists, if not create it
-if not exist "venv" (
-    echo Creating virtual environment...
-    python -m venv venv
-)
-
-REM Activate virtual environment
-call venv\Scripts\activate
 
 REM Install requirements
 echo Installing required packages...

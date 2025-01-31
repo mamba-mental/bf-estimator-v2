@@ -53,6 +53,10 @@ def run_user_interaction(use_test_data=False, user_data=None):
     Handle user interaction for data input.
     """
     # Gather user input for various fitness and health parameters.
+    print("Welcome to the Weight Loss Predictor!")
+    print("=====================================")
+    print("Please enter your information below:")
+    print()
     name = input("Enter your name: ")
     current_weight = get_float_input("Enter your current weight in lbs: ")
     current_bf = get_float_input("Enter your current body fat percentage: ")
@@ -122,7 +126,7 @@ def run_user_interaction(use_test_data=False, user_data=None):
     is_bodybuilder = workout_type_str == "Bodybuilding" and experience_level_str in ['Intermediate (2-4 years)', 'Advanced (4-10 years)', 'Elite (10+ years)']
 
     # Calculate age from date of birth
-    age = calculate_age(datetime.strptime(dob, "%m%d%y"), datetime.strptime(start_date, "%m%d%y"))
+    age = calculate_age(dob, start_date)
 
     # Prepare initial data dictionary to store all gathered inputs and calculated scores.
     initial_data = {
@@ -304,7 +308,10 @@ def main():
     with suppress_stderr():
         # Check if test mode is activated using command-line arguments.
         use_test_data = '--test' in sys.argv
-        progression, initial_data = run_user_interaction(use_test_data=use_test_data)
+        if use_test_data:
+            progression, initial_data = process_test_data(TEST_DATA)
+        else:
+            progression, initial_data = run_user_interaction()
         
         # Print summary of results to the user and capture saved file paths.
         saved_files = print_summary(progression, initial_data)

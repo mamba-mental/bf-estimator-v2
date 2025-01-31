@@ -4,43 +4,125 @@ import datetime
 import json
 import base64
 import io
+import ctypes
+import matplotlib
+
+matplotlib.use('Agg')  # Set backend before importing pyplot
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+plt.style.use('seaborn-v0_8-whitegrid')  # Use a clean, modern style with white background
+matplotlib.rcParams.update({
+    'font.family': 'sans-serif',
+    'font.sans-serif': ['Arial'],
+    'font.size': 10,
+    'axes.titlesize': 12,
+    'axes.labelsize': 10,
+    'xtick.labelsize': 9,
+    'ytick.labelsize': 9,
+    'axes.unicode_minus': False,
+    'date.autoformatter.year': '%Y',
+    'date.autoformatter.month': '%m/%d/%Y',
+    'date.autoformatter.day': '%m/%d/%Y',
+    'figure.facecolor': 'white',
+    'axes.facecolor': 'white',
+    'savefig.facecolor': 'white',
+    'axes.grid': True,
+    'grid.alpha': 0.3,
+    'axes.spines.top': False,
+    'axes.spines.right': False,
+    'figure.figsize': [12, 7],
+    'savefig.bbox': 'tight',
+    'savefig.pad_inches': 0.3,
+    'savefig.dpi': 300,
+    'savefig.format': 'png',
+    'savefig.transparent': False,
+    'figure.max_open_warning': 0,
+    'agg.path.chunksize': 10000
+})
+
 from weasyprint import HTML, CSS
 from jinja2 import Environment, FileSystemLoader
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 RESULTS_FOLDER = os.path.join(SCRIPT_DIR, "results")
 TEMPLATE_FOLDER = os.path.join(SCRIPT_DIR, "templates")
 CSS_FILE = os.path.join(SCRIPT_DIR, "styles", "report_style.css")
 
-def print_summary(progression, initial_data):
+
+def get_body_fat_info(gender, body_fat_percentage):
     """
-    Print a summary of the weight loss journey and save reports.
-    Returns the saved files dictionary.
+    Get body fat category information.
     """
-    report_data = generate_comprehensive_report(progression, initial_data)
-    
-    print("\nWeight Loss Journey Summary:")
-    print(f"Initial Weight: {report_data['initial_weight']:.2f} lbs")
-    print(f"Final Weight: {report_data['final_weight']:.2f} lbs")
-    print(f"Total Weight Loss: {report_data['total_weight_loss']:.2f} lbs")
-    print(f"Initial Body Fat: {report_data['initial_body_fat']:.2f}%")
-    print(f"Final Body Fat: {report_data['final_body_fat']:.2f}%")
-    print(f"Total Body Fat Reduction: {report_data['total_bf_loss']:.2f}%")
-    print(f"Total Muscle Gain: {report_data['total_muscle_gain']:.2f} lbs")
-    
-    save_option = input("\nDo you want to save the detailed report? (y/n): ").lower()
-    saved_files = {}
-    if save_option == 'y':
-        save_format = input("Choose the format to save (markdown/pdf/both): ").lower()
-        if save_format in ['markdown', 'pdf', 'both']:
-            saved_files = save_report(report_data, initial_data.get('name', 'User'), save_format)
-        else:
-            print("Invalid format choice. Report will not be saved.")
-    else:
-        print("Report will not be saved.")
-    
-    return saved_files
+    categories = [
+        {"name": "Very Lean", "men": 10, "women": 18, "time": "3-4 weeks", "description": "Visible abs, vascularity, striations"},
+        {"name": "Lean", "men": 14, "women": 22, "time": "2-3 months", "description": "Some muscle definition, less visible abs"},
+        {"name": "Average", "men": 19, "women": 27, "time": "3-4 months", "description": "Little muscle definition, soft look"},
+        {"name": "Above Average", "men": 24, "women": 32, "time": "4-6 months", "description": "No visible abs, excess fat"},
+        {"name": "High Body Fat", "men": 29, "women": 37, "time": "6-12 months", "description": "Excess fat all around, round physique"},
+        {"name": "Obese", "men": float('inf'), "women": float('inf'), "time": "12+ months", "description": "Significant excess fat all around"}
+    ]
+
+    threshold_key = "men" if gender.lower() == 'm' else "women"
+
+    for category in categories:
+        if body_fat_percentage < category[threshold_key]:
+            return category["name"], category["time"], category["description"]
+
+    return categories[-1]["name"], categories[-1]["time"], categories[-1]["description"]
+
+
+def generate_weight_progress_chart(weekly_progress):
+    """
+    Generate a weight progress chart.
+    """
+    dates = [datetime.datetime.strptime(week['date'], "%m/%d/%Y") for week in weekly_progress]
+    weights = [week['weight'] for week in weekly_progress]
+
+    fig, ax = plt.subplots()
+    ax.plot(dates, weights, marker='o', linestyle='-', color='b')
+    ax.set_title('Weight Progress Over Time')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Weight (lbs)')
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=7))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    # Save the plot to a bytes buffer
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    return image_base64
+
+
+def generate_body_composition_chart(body_composition_changes):
+    """
+    Generate a body composition changes chart.
+    """
+    dates = [datetime.datetime.strptime(change['date_reached'], "%m/%d/%Y") for change in body_composition_changes]
+    body_fat = [change['body_fat_percentage'] for change in body_composition_changes]
+
+    fig, ax = plt.subplots()
+    ax.plot(dates, body_fat, marker='s', linestyle='--', color='r')
+    ax.set_title('Body Fat Percentage Over Time')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Body Fat %')
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=7))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    # Save the plot to a bytes buffer
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    return image_base64
+
 
 def generate_comprehensive_report(progression, initial_data):
     """
@@ -92,10 +174,10 @@ def generate_comprehensive_report(progression, initial_data):
         'final_tdee': progression[-1]['tdee'],
         'final_weekly_caloric_output': progression[-1]['weekly_caloric_output'],
     }
-    
+
     initial_bf_info = get_body_fat_info(initial_data['gender'], progression[0]['body_fat_percentage'])
     final_bf_info = get_body_fat_info(initial_data['gender'], progression[-1]['body_fat_percentage'])
-    
+
     report_data.update({
         'initial_body_fat_category': initial_bf_info[0],
         'initial_body_fat_description': initial_bf_info[2],
@@ -123,14 +205,21 @@ def generate_comprehensive_report(progression, initial_data):
     report_data['body_composition_chart'] = generate_body_composition_chart(report_data['body_composition_changes'])
 
     html_content = generate_html(report_data)
-    pdf_content = HTML(string=html_content).write_pdf(stylesheets=[CSS(CSS_FILE)])
+    base_url = os.path.dirname(os.path.abspath(__file__))
+
+    # Convert HTML to PDF using WeasyPrint with CSS
+    try:
+        html = HTML(string=html_content, base_url=base_url)
+        css = [CSS(filename=CSS_FILE)]
+        pdf_content = html.write_pdf(stylesheets=css)
+        print("PDF generation successful")
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        pdf_content = b''
     report_data['pdf_content'] = pdf_content
-    
-    for key, value in report_data.items():
-        if isinstance(value, float):
-            report_data[key] = round(value, 2)
 
     return report_data
+
 
 def save_report(report_data, username, save_format):
     """
@@ -140,6 +229,9 @@ def save_report(report_data, username, save_format):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     base_filename = f"{username.replace(' ', '_')}_{timestamp}"
     results_folder = os.path.abspath('results')  # Absolute path for consistency
+
+    # Ensure results directory exists
+    os.makedirs(results_folder, exist_ok=True)
 
     # Save weight progress chart
     weight_chart_filename = os.path.join(results_folder, f"weight_progress_chart_{timestamp}.png")
@@ -175,6 +267,29 @@ def save_report(report_data, username, save_format):
         saved_files['json'] = json_filename
 
     return saved_files
+
+
+def generate_html(report_data):
+    """
+    Generate HTML content for the report using Jinja2 templates.
+    """
+    env = Environment(loader=FileSystemLoader(TEMPLATE_FOLDER))
+    template = env.get_template('report_template.html')
+    html_content = template.render({**report_data, 'get_score_description': get_score_description})
+    return html_content
+
+
+def get_score_description(score):
+    """
+    Provide a description based on the score.
+    """
+    if score < 1:
+        return "Low"
+    elif 1 <= score < 3:
+        return "Moderate"
+    else:
+        return "High"
+
 
 def generate_markdown(report_data, weight_chart_path=None, body_comp_chart_path=None):
     """
@@ -252,7 +367,7 @@ This analysis provides insight into your workout routine and its effectiveness:
 ## 7. Weekly Progress Forecast
 
 | Date | Weight (lbs) | Body Fat % | Daily Cal Intake | TDEE | Weekly Cal Output | Total Weight Lost (lbs) | Lean Mass (lbs) | Fat Mass (lbs) | Muscle Gain (lbs) | RMR |
-|------|-------------|------------|------------------|------|-------------------|----------------------|----------------|---------------|-----------------|-----|
+|------|-------------|------------|------------------|------|-------------------|------------------------|-----------------|---------------|-------------------|-----|
 """
     for week in report_data['weekly_progress']:
         markdown += f"| {week['date']} | {week['weight']:.2f} | {week['body_fat_percentage']:.2f} | {week['daily_calorie_intake']:.2f} | {week['tdee']:.2f} | {week['weekly_caloric_output']:.2f} | {week.get('total_weight_lost', 0):.2f} | {week['lean_mass']:.2f} | {week['fat_mass']:.2f} | {week['muscle_gain']:.2f} | {week['rmr']:.2f} |\n"
@@ -261,7 +376,7 @@ This analysis provides insight into your workout routine and its effectiveness:
 ## 8. Body Composition Changes
 
 | Body Fat Category | Body Fat % | Date Reached | Description | Est. Time to Six-Pack |
-|------------------|------------|--------------|-------------|---------------------|
+|------------------|------------|--------------|-------------|-----------------------|
 """
     for change in report_data['body_composition_changes']:
         markdown += f"| {change['category']} | {change['body_fat_percentage']:.2f}% | {change['date_reached']} | {change['description']} | {change['time_to_six_pack']} |\n"
@@ -344,109 +459,19 @@ To maintain your results at the end of your journey:
 """
     return markdown
 
-def generate_html(report_data):
-    """
-    Generate HTML content for the report.
-    """
-    env = Environment(loader=FileSystemLoader(TEMPLATE_FOLDER))
-    env.globals['get_score_description'] = get_score_description
-    template = env.get_template('report_template.html')
-    report_data['weight_progress_chart'] = generate_weight_progress_chart(report_data['weekly_progress'])
-    report_data['body_composition_chart'] = generate_body_composition_chart(report_data['body_composition_changes'])
-    return template.render(report_data)
 
-def generate_weight_progress_chart(weekly_progress):
+def print_summary(progression, initial_data):
     """
-    Generate weight progress chart.
+    Print and save the summary report of weight loss progression.
     """
-    dates = []
-    weights = []
-    for week in weekly_progress:
-        try:
-            date = datetime.datetime.strptime(week['date'], '%m%d%y')
-        except ValueError:
-            try:
-                date = datetime.datetime.strptime(week['date'], '%m/%d/%Y')
-            except ValueError:
-                print(f"Error parsing date: {week['date']}. Skipping this data point.")
-                continue
-        dates.append(date)
-        weights.append(week['weight'])
-    
-    plt.figure(figsize=(10, 6))
-    plt.plot(dates, weights, marker='o')
-    plt.title('Weight Progress')
-    plt.xlabel('Date')
-    plt.ylabel('Weight (lbs)')
-    plt.grid(True)
-    
-    img_buffer = io.BytesIO()
-    plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
-    return base64.b64encode(img_buffer.getvalue()).decode()
+    report_data = generate_comprehensive_report(progression, initial_data)
+    saved_files = save_report(report_data, initial_data['name'], 'both')
 
-def generate_body_composition_chart(body_composition_changes):
-    """
-    Generate body composition chart.
-    """
-    dates = []
-    body_fat_percentages = []
-    for change in body_composition_changes:
-        try:
-            date = datetime.datetime.strptime(change['date_reached'], '%m/%d/%Y')
-        except ValueError:
-            try:
-                date = datetime.datetime.strptime(change['date_reached'], '%m%d%y')
-            except ValueError:
-                print(f"Error parsing date: {change['date_reached']}. Skipping this data point.")
-                continue
-        dates.append(date)
-        body_fat_percentages.append(change['body_fat_percentage'])
-    
-    plt.figure(figsize=(10, 6))
-    plt.plot(dates, body_fat_percentages, marker='o')
-    plt.title('Body Composition Changes')
-    plt.xlabel('Date')
-    plt.ylabel('Body Fat Percentage')
-    plt.grid(True)
-    
-    img_buffer = io.BytesIO()
-    plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
-    return base64.b64encode(img_buffer.getvalue()).decode()
+    if 'markdown' in saved_files:
+        print(f"Markdown report available at: {saved_files['markdown']}")
+    if 'pdf' in saved_files:
+        print(f"PDF report available at: {saved_files['pdf']}")
+    if 'pdf_error' in saved_files:
+        print(f"Failed to generate PDF report: {saved_files['pdf_error']}")
 
-def get_score_description(score):
-    """
-    Get description for a given score.
-    """
-    if score < 0.2:
-        return "Very Low"
-    elif score < 0.4:
-        return "Low"
-    elif score < 0.6:
-        return "Moderate"
-    elif score < 0.8:
-        return "High"
-    else:
-        return "Very High"
-
-def get_body_fat_info(gender, body_fat_percentage):
-    """
-    Get body fat category information.
-    """
-    categories = [
-        {"name": "Very Lean", "men": 10, "women": 18, "time": "3-4 weeks", "description": "Visible abs, vascularity, striations"},
-        {"name": "Lean", "men": 14, "women": 22, "time": "2-3 months", "description": "Some muscle definition, less visible abs"},
-        {"name": "Average", "men": 19, "women": 27, "time": "3-4 months", "description": "Little muscle definition, soft look"},
-        {"name": "Above Average", "men": 24, "women": 32, "time": "4-6 months", "description": "No visible abs, excess fat"},
-        {"name": "High Body Fat", "men": 29, "women": 37, "time": "6-12 months", "description": "Excess fat all around, round physique"},
-        {"name": "Obese", "men": float('inf'), "women": float('inf'), "time": "12+ months", "description": "Significant excess fat all around"}
-    ]
-
-    threshold_key = "men" if gender.lower() == 'm' else "women"
-
-    for category in categories:
-        if body_fat_percentage < category[threshold_key]:
-            return category["name"], category["time"], category["description"]
-
-    return categories[-1]["name"], categories[-1]["time"], categories[-1]["description"]
+    return saved_files

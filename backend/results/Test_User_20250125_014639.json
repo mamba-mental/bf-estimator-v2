@@ -1,0 +1,27 @@
+{
+    "initial_weight": 180,
+    "final_weight": 158.68552573116133,
+    "total_weight_loss": 21.314474268838666,
+    "initial_body_fat": 20,
+    "final_body_fat": 12.130763283122786,
+    "total_bf_loss": 7.869236716877214,
+    "total_muscle_gain": -4.564239759864762,
+    "initial_body_fat_category": "Average",
+    "initial_body_fat_description": "Some muscle definition with higher fat storage.",
+    "initial_time_to_six_pack": "Approximately 10 months",
+    "final_body_fat_category": "Athletic",
+    "final_body_fat_description": "Visible muscle definition and vascularity.",
+    "final_time_to_six_pack": "Approximately 2 months",
+    "adaptation_percentage": -20.1,
+    "lean_mass_preserved": 96.8,
+    "avg_muscle_gain": -0.35,
+    "final_tdee": 2595,
+    "next_steps": [
+        "Focus on maintaining current body composition",
+        "Consider a lean bulk phase"
+    ],
+    "markdown_content": "\n# Body Fat Estimator Report\n\n## 1. Initial Body Fat\n- Category: Average\n  - Description: Some muscle definition with higher fat storage.\n  - Est. Time to Six-Pack: Approximately 10 months\n\n## 2. Final Body Fat\n- Category: Athletic\n  - Description: Visible muscle definition and vascularity.\n  - Est. Time to Six-Pack: Approximately 2 months\n\n## 3. Insights and Recommendations\n- Your metabolic rate adapted by -20.1% over the course of your journey.\n- You maintained 96.8% of your initial lean mass.\n- Your muscle gain rate averaged -0.35 lbs per week.\n- Based on your final body fat percentage, you're now in the Athletic category.\n- To maintain your results, consider a daily calorie intake of 2595 calories.\n\n## 4. Next Steps\n- Continue with your current plan.\n- Consider adjusting your protein intake to support lean mass.\n- Your next ideal body composition goal could be a lower body fat percentage.\n",
+    "volume_score_description": "Needs Improvement",
+    "intensity_score_description": "Needs Improvement",
+    "frequency_score_description": "Needs Improvement",
+    "pdf_content": 

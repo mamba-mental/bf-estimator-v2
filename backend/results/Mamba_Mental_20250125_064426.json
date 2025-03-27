@@ -1,0 +1,50 @@
+{
+    "initial_weight": 245.6,
+    "final_weight": 239.84708651784658,
+    "total_weight_loss": 5.752913482153417,
+    "initial_body_fat": 30.5,
+    "final_body_fat": 28.730120591574043,
+    "total_bf_loss": 1.7698794084259575,
+    "total_muscle_gain": 0.24672932589231777,
+    "weekly_progress": [
+        {
+            "date": "010325",
+            "weight": 245.6,
+            "body_fat_percentage": 30.5,
+            "daily_calorie_intake": 1150.95023216,
+            "tdee": 2604.7763424,
+            "weekly_caloric_output": 0,
+            "total_weight_lost": 0,
+            "lean_mass": 170.692,
+            "fat_mass": 74.908,
+            "muscle_gain": 0,
+            "rmr": 1984.396952
+        },
+        {
+            "date": "011025",
+            "weight": 242.6718275540171,
+            "body_fat_percentage": 29.611615571783222,
+            "daily_calorie_intake": 1000,
+            "tdee": 2604.7112229914396,
+            "weekly_caloric_output": 11232.978560940077,
+            "total_weight_lost": 2.928172445982881,
+            "lean_mass": 170.81277887770085,
+            "fat_mass": 71.85904867631626,
+            "muscle_gain": 0.28125,
+            "rmr": 1984.396952
+        },
+        {
+            "date": "011725",
+            "weight": 239.84708651784658,
+            "body_fat_percentage": 28.730120591574043,
+            "daily_calorie_intake": 1000,
+            "tdee": 2552.9955180852708,
+            "weekly_caloric_output": 10870.968626596896,
+            "total_weight_lost": 5.752913482153417,
+            "lean_mass": 170.93872932589233,
+            "fat_mass": 68.90835719195425,
+            "muscle_gain": 0.28125,
+            "rmr": 1971.1149960388175
+        }
+    ]
+}

@@ -1,0 +1,240 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Loss Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='web_style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Weight Loss Predictor</h1>
+        
+        <div class="button-group">
+            <button onclick="fillTestData()">Fill with Test Data</button>
+            <button onclick="fillLastReportData()">Fill with Last Report Data</button>
+        </div>
+
+        <form method="POST" id="weightLossForm">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="current_weight">Current Weight (lbs):</label>
+                <input type="number" id="current_weight" name="current_weight" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="current_bf">Current Body Fat (%):</label>
+                <input type="number" id="current_bf" name="current_bf" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="goal_weight">Goal Weight (lbs):</label>
+                <input type="number" id="goal_weight" name="goal_weight" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="goal_bf">Goal Body Fat (%):</label>
+                <input type="number" id="goal_bf" name="goal_bf" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="start_date">Start Date (MMDDYY):</label>
+                <input type="text" id="start_date" name="start_date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="end_date">End Date (MMDDYY):</label>
+                <input type="text" id="end_date" name="end_date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="dob">Date of Birth (MMDDYY):</label>
+                <input type="text" id="dob" name="dob" required>
+            </div>
+
+            <div class="form-group">
+                <label for="gender">Gender (m/f):</label>
+                <input type="text" id="gender" name="gender" required>
+            </div>
+
+            <div class="form-group">
+                <label for="height_feet">Height (feet):</label>
+                <input type="number" id="height_feet" name="height_feet" required>
+            </div>
+
+            <div class="form-group">
+                <label for="height_inches">Height (inches):</label>
+                <input type="number" id="height_inches" name="height_inches" required>
+            </div>
+
+            <div class="form-group">
+                <label for="protein_intake">Daily Protein Intake (g):</label>
+                <input type="number" id="protein_intake" name="protein_intake" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="activity_level">Activity Level (1-5):</label>
+                <input type="number" id="activity_level" name="activity_level" min="1" max="5" required>
+            </div>
+
+            <div class="form-group">
+                <label for="resistance_training">Resistance Training (y/n):</label>
+                <input type="text" id="resistance_training" name="resistance_training" required>
+            </div>
+
+            <div class="form-group">
+                <label for="is_athlete">Athlete (y/n):</label>
+                <input type="text" id="is_athlete" name="is_athlete" required>
+            </div>
+
+            <div class="form-group">
+                <label for="workout_type">Workout Type:</label>
+                <select id="workout_type" name="workout_type" required>
+                    <option value="Bodybuilding">Bodybuilding</option>
+                    <option value="Cardio">Cardio</option>
+                    <option value="General Fitness">General Fitness</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="workout_days">Workout Days per Week:</label>
+                <input type="number" id="workout_days" name="workout_days" min="1" max="7" required>
+            </div>
+
+            <div class="form-group">
+                <label for="job_activity">Job Activity:</label>
+                <select id="job_activity" name="job_activity" required>
+                    <option value="sedentary">Sedentary</option>
+                    <option value="light">Light</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="active">Active</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="leisure_activity">Leisure Activity:</label>
+                <select id="leisure_activity" name="leisure_activity" required>
+                    <option value="sedentary">Sedentary</option>
+                    <option value="light">Light</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="active">Active</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="experience_level">Experience Level:</label>
+                <select id="experience_level" name="experience_level" required>
+                    <option value="Beginner (0-1 year)">Beginner (0-1 year)</option>
+                    <option value="Novice (1-2 years)">Novice (1-2 years)</option>
+                    <option value="Intermediate (2-4 years)">Intermediate (2-4 years)</option>
+                    <option value="Advanced (4-10 years)">Advanced (4-10 years)</option>
+                    <option value="Elite (10+ years)">Elite (10+ years)</option>
+                </select>
+            </div>
+
+            <input type="submit" value="Generate Full Report">
+        </form>
+        
+        <h2>Weekly Update</h2>
+        <form id="weeklyUpdateForm" method="POST" action="/update_weekly">
+            <div class="form-group">
+                <label for="weekly_weight">Current Weight (lbs):</label>
+                <input type="number" id="weekly_weight" name="current_weight" step="0.1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="weekly_bf">Current Body Fat (%):</label>
+                <input type="number" id="weekly_bf" name="current_bf" step="0.1" required>
+            </div>
+
+            <input type="submit" value="Update Weekly Progress">
+        </form>
+        
+        <h2>Or use test data directly:</h2>
+        <form method="POST">
+            <input type="hidden" name="use_test_data" value="1">
+            <input type="submit" value="Use Test Data">
+        </form>
+        
+        <h2>Generate report with test data directly:</h2>
+        <a href="{{ url_for('test') }}" class="button">Generate Test Report</a>
+    </div>
+
+    <script>
+        function fillTestData() {
+            fetch('/get_test_data')
+                .then(response => response.json())
+                .then(data => fillForm(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        function fillLastReportData() {
+            fetch('/get_last_report_data')
+                .then(response => response.json())
+                .then(data => fillForm(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        function fillForm(data) {
+            for (const [key, value] of Object.entries(data)) {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = value === 'y' || value === true;
+                    } else {
+                        element.value = value;
+                    }
+                }
+            }
+            // Also fill the weekly update form
+            document.getElementById('weekly_weight').value = data.current_weight || '';
+            document.getElementById('weekly_bf').value = data.current_bf || '';
+        }
+
+        document.getElementById('weightLossForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'weight_loss_report.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('weeklyUpdateForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/update_weekly', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'weekly_update_report.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>

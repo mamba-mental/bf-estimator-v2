@@ -1,0 +1,48 @@
+{
+    "color_primary": [
+        "#1f538d",
+        "#2466ae"
+    ],
+    "color_secondary": [
+        "#14375e",
+        "#1a4270"
+    ],
+    "text_color": "#000000",
+    "input_bg_color": [
+        "#2c415c",
+        "#dfe7f1"
+    ],
+    "hover_color": [
+        "#3a5a7d",
+        "#c5d1e0"
+    ],
+    "button_color": [
+        "#1a4270",
+        "#1f538d"
+    ],
+    "button_hover_color": [
+        "#2466ae",
+        "#163154"
+    ],
+    "border_color": [
+        "#3a5a7d",
+        "#a5b9d1"
+    ],
+    "progressbar_color": [
+        "#3d8eff",
+        "#1f538d"
+    ],
+    "chart_colors": [
+        "#3d8eff",
+        "#14c38d",
+        "#f45050",
+        "#ff9500",
+        "#c633ff"
+    ],
+    "success_color": "#00cc66",
+    "warning_color": "#ffcc00",
+    "error_color": "#ff3333",
+    "entry_text_color": "#000000",
+    "entry_background_color": "#EEEEEE",
+    "progressbar_progress_color": "#1F6AA5"
+}

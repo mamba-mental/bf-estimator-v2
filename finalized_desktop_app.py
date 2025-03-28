@@ -5,6 +5,7 @@ import glob
 import shutil
 import sqlite3
 import subprocess
+import traceback
 from datetime import datetime, timedelta
 import customtkinter as ctk
 from PIL import Image, ImageTk

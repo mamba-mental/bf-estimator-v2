@@ -2,7 +2,13 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../memory_bank"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"cline.chromeExecutablePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+		"cline.modelSettings.o3Mini.reasoningEffort": "high"
+	}
 }

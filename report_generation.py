@@ -295,12 +295,49 @@ def generate_comprehensive_report(progression, initial_data):
     # initial_data (dict): A dictionary containing the user's initial data and settings.
     # Returns:
     # dict: A dictionary containing the full report data.
+
+    # --- Calculate Age Safely ---
+    calculated_age = "N/A" # Default value
+    start_date_str_converted = convert_date_string(progression[0]['date'])
+    start_date_dt = None
+    birth_date_dt = None
+
+    # Try parsing start date
+    try:
+        start_date_dt = datetime.datetime.strptime(start_date_str_converted, "%m/%d/%Y")
+    except (ValueError, TypeError) as e:
+        print(f"Error: Could not parse start date '{start_date_str_converted}' for age calculation: {e}")
+
+    # Try parsing birth date (dob)
+    if 'dob' in initial_data and initial_data['dob']:
+        dob_str = initial_data['dob']
+        try:
+            # Try parsing MMDDYY first
+            birth_date_dt = datetime.datetime.strptime(dob_str, "%m%d%y")
+        except ValueError:
+            try:
+                # Try parsing MM/DD/YYYY
+                birth_date_dt = datetime.datetime.strptime(dob_str, "%m/%d/%Y")
+            except ValueError:
+                try:
+                    # Try parsing YYYY-MM-DD
+                    birth_date_dt = datetime.datetime.strptime(dob_str, "%Y-%m-%d")
+                except ValueError:
+                    print(f"Warning: Could not parse birth date format for '{dob_str}'")
+
+    # Calculate age only if both dates are valid datetime objects
+    if start_date_dt and birth_date_dt:
+        age_result = calculate_age(birth_date_dt, start_date_dt) # Pass datetime objects
+        if age_result is not None:
+            calculated_age = age_result
+    # --- End Age Calculation ---
+
     report_data = {
         'name': initial_data['name'],
         'report_date': datetime.datetime.now().strftime("%m/%d/%Y"),
-        'start_date': datetime.datetime.strptime(progression[0]['date'], "%m%d%y").strftime("%m/%d/%Y"),
-        'end_date': datetime.datetime.strptime(progression[-1]['date'], "%m%d%y").strftime("%m/%d/%Y"),
-        'age': calculate_age(initial_data['dob'], datetime.datetime.strptime(progression[0]['date'], "%m%d%y")),
+        'start_date': start_date_str_converted, # Use the converted string
+        'end_date': convert_date_string(progression[-1]['date']),
+        'age': calculated_age, # Use the safely calculated age
         'gender': 'Male' if initial_data['gender'].lower() == 'm' else 'Female',
         'height': f"{initial_data['height_feet']}'{'0' if initial_data['height_inches'] == 0 else initial_data['height_inches']}\" ({initial_data['height_cm']:.1f} cm)",
         'initial_weight': progression[0]['weight'],
@@ -394,13 +431,28 @@ def generate_comprehensive_report(progression, initial_data):
     return report_data
 
 def calculate_age(birth_date, start_date):
-    # Calculate the age of the user based on birth date and start date.
-    # Parameters:
-    # birth_date (datetime): The user's birth date.
-    # start_date (datetime): The start date of the weight loss journey.
-    # Returns:
-    # int: The calculated age in years.
-    return start_date.year - birth_date.year - ((start_date.month, start_date.day) < (birth_date.month, birth_date.day))
+    """
+    Calculate the age of the user based on birth date and start date.
+
+    Args:
+        birth_date (datetime): The user's birth date as a datetime object.
+        start_date (datetime): The start date of the weight loss journey as a datetime object.
+
+    Returns:
+        int: The calculated age in years.
+    """
+    # Ensure both inputs are datetime objects before proceeding
+    if not isinstance(birth_date, datetime.datetime) or not isinstance(start_date, datetime.datetime):
+        print("Error: calculate_age received invalid date types.")
+        return None
+
+    try:
+        age = start_date.year - birth_date.year - ((start_date.month, start_date.day) < (birth_date.month, birth_date.day))
+        return age
+    except AttributeError as e:
+        # This catch is a safeguard, but the type check above should prevent it.
+        print(f"Error calculating age (AttributeError): {e}. Check date objects.")
+        return None
 
 def calculate_tef(protein_intake):
     # Calculate the Thermic Effect of Food (TEF) based on protein intake.
@@ -455,6 +507,32 @@ def get_score_description(score):
         return "High"
     else:
         return "Very High"
+
+def convert_date_string(date_str):
+    """Convert date string from various formats to MM/DD/YYYY format"""
+    try:
+        # Try MM/DD/YYYY format first (most common user input format)
+        return datetime.datetime.strptime(date_str, "%m/%d/%Y").strftime("%m/%d/%Y")
+    except ValueError:
+        try:
+            # Try MMDDYY format next (legacy format)
+            return datetime.datetime.strptime(date_str, "%m%d%y").strftime("%m/%d/%Y")
+        except ValueError:
+            try:
+                # Try YYMMDD format 
+                return datetime.datetime.strptime(date_str, "%y%m%d").strftime("%m/%d/%Y")
+            except ValueError:
+                try:
+                    # Try DD/MM/YYYY format
+                    return datetime.datetime.strptime(date_str, "%d/%m/%Y").strftime("%m/%d/%Y")
+                except ValueError:
+                    try:
+                        # Try YYYY-MM-DD format
+                        return datetime.datetime.strptime(date_str, "%Y-%m-%d").strftime("%m/%d/%Y")
+                    except ValueError:
+                        # If all formats fail, return the original string
+                        print(f"Warning: Could not parse date format for '{date_str}', using as-is")
+                        return date_str
 
 def get_body_fat_info(gender, body_fat_percentage):
     # Get information about body fat percentage, including category, time to six-pack, and description.

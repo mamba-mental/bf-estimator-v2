@@ -1,0 +1,347 @@
+#!/usr/bin/env python
+# theme_manager.py - Theme management for Body Fat Estimator
+# Created: 03/27/25
+
+import os
+import json
+import tkinter as tk # Import tkinter for TclError
+import customtkinter as ctk
+import traceback
+
+class ThemeManager:
+    """Theme management system for Body Fat Estimator"""
+
+    def __init__(self, root):
+        """
+        Initialize theme manager.
+
+        Args:
+            root: The root window or application instance
+        """
+        self.root = root
+        self.current_theme_name = None # Store the name
+        self.themes = {}
+
+        # Load built-in themes
+        self._load_default_themes()
+
+    def _load_default_themes(self):
+        """Load default themes."""
+        # Enhanced Blue (default theme)
+        self.themes["enhanced_blue"] = {
+            "color_primary": ["#1f538d", "#2466ae"],
+            "color_secondary": ["#14375e", "#1a4270"],
+            "text_color": ["#DCE4EE", "#0B1C2C"],
+            "input_bg_color": ["#2c415c", "#dfe7f1"],
+            "hover_color": ["#3a5a7d", "#c5d1e0"],
+            "button_color": ["#1a4270", "#1f538d"],
+            "button_hover_color": ["#2466ae", "#163154"],
+            "border_color": ["#3a5a7d", "#a5b9d1"],
+            "progressbar_color": ["#3d8eff", "#1f538d"],
+            "chart_colors": ["#3d8eff", "#14c38d", "#f45050", "#ff9500", "#c633ff"],
+            "success_color": "#00cc66",
+            "warning_color": "#ffcc00",
+            "error_color": "#ff3333"
+        }
+
+        # Load additional themes from files if they exist
+        self._load_theme_file("midnight_oled_theme.json")
+        self._load_theme_file("forest_theme.json")
+        self._load_theme_file("lavender_theme.json")
+        self._load_theme_file("sunset_theme.json")
+        self._load_theme_file("batman_theme.json")
+        self._load_theme_file("enhanced_blue.json")  # Override defaults if custom file exists
+
+        # If no themes were loaded, create the batman theme as fallback
+        if "batman_theme" not in self.themes:
+            self.themes["batman_theme"] = {
+                "color_primary": ["#1a1a1a", "#1a1a1a"],
+                "color_secondary": ["#2a2a2a", "#2a2a2a"],
+                "text_color": ["#ffff00", "#000000"],
+                "input_bg_color": ["#2c2c2c", "#f5f5f5"],
+                "hover_color": ["#3c3c3c", "#e5e5e5"],
+                "button_color": ["#3c3c3c", "#ffcc00"],
+                "button_hover_color": ["#ffcc00", "#ffd633"],
+                "border_color": ["#4c4c4c", "#cccccc"],
+                "progressbar_color": ["#ffcc00", "#ffcc00"],
+                "chart_colors": ["#ffcc00", "#cc0000", "#2929ff", "#00cc00", "#ff6600"],
+                "success_color": "#00cc66",
+                "warning_color": "#ffcc00",
+                "error_color": "#ff3333"
+            }
+
+    def _load_theme_file(self, filename):
+        """Load theme from a JSON file."""
+        try:
+            file_paths = [
+                os.path.join(os.path.dirname(__file__), filename),
+                os.path.join(os.path.dirname(__file__), "themes", filename),
+                os.path.join(os.getcwd(), filename),
+                os.path.join(os.getcwd(), "themes", filename)
+            ]
+            for file_path in file_paths:
+                if os.path.exists(file_path):
+                    with open(file_path, 'r') as f:
+                        theme_data = json.load(f)
+                        theme_name = os.path.splitext(os.path.basename(file_path))[0]
+                        self.themes[theme_name] = theme_data
+                        return True
+            print(f"Theme file {filename} not found.")
+            return False
+        except Exception as e:
+            print(f"Error loading theme file {filename}: {str(e)}")
+            return False
+
+    def apply_theme(self, theme_name):
+        """
+        Apply a theme to the application.
+
+        Args:
+            theme_name: Name of the theme to apply
+
+        Returns:
+            bool: True if theme was applied successfully, False otherwise
+        """
+        if theme_name not in self.themes:
+            print(f"Theme '{theme_name}' not found, using default theme 'enhanced_blue'")
+            theme_name = "enhanced_blue"
+            if theme_name not in self.themes: # Ensure default exists
+                 print("Error: Default theme 'enhanced_blue' not found.")
+                 return False
+
+        try:
+            theme = self.themes[theme_name]
+            appearance_mode = ctk.get_appearance_mode().lower()
+            mode_index = 0 if appearance_mode == "dark" else 1
+
+            # Manually update all widgets in the app
+            # Use update_idletasks to ensure widget tree is stable before iterating
+            self.root.update_idletasks()
+            all_widgets = self._get_all_widgets(self.root)
+            print(f"Applying theme '{theme_name}' to {len(all_widgets)} widgets...") # Debug print
+
+            for widget in all_widgets:
+                self._apply_theme_to_widget(widget, theme, mode_index, theme_name)
+
+            # Store the current theme name
+            self.current_theme_name = theme_name
+            print(f"Successfully applied theme '{theme_name}'.") # Debug print
+            return True
+        except Exception as e:
+            print(f"Error applying theme '{theme_name}': {str(e)}")
+            traceback.print_exc() # Print full traceback for debugging
+            return False
+
+    def _get_all_widgets(self, parent):
+        """Get all widgets in the application recursively."""
+        widgets = []
+        # Check if parent is a valid Tkinter widget before proceeding
+        if isinstance(parent, (tk.Widget, tk.Tk, tk.Toplevel, ctk.CTk, ctk.CTkToplevel)):
+            # Check if widget still exists before adding/traversing
+            if parent.winfo_exists():
+                widgets.append(parent)
+                try:
+                    for child in parent.winfo_children():
+                        widgets.extend(self._get_all_widgets(child))
+                except tk.TclError: # Handle cases where widget might be destroyed during iteration
+                    pass
+                except Exception as e:
+                     print(f"Error traversing widget tree under {type(parent).__name__}: {e}")
+        return widgets
+
+    def _apply_theme_to_widget(self, widget, theme, mode_index, theme_name_for_debug):
+        """Apply theme colors to a specific widget."""
+
+        def get_color(key, default=None):
+            """Safely get color from theme dictionary, providing a default."""
+            if key in theme:
+                color_list = theme[key]
+                if isinstance(color_list, list) and len(color_list) > mode_index:
+                    return color_list[mode_index]
+                elif isinstance(color_list, str): # Handle single color values if any
+                    return color_list
+            # print(f"Warning: Theme key '{key}' not found or invalid for mode_index {mode_index} in theme '{theme_name_for_debug}'. Using default: {default}")
+            return default # Return provided default or None
+
+        try:
+            # Check if widget exists before trying to configure
+            if not widget.winfo_exists():
+                return
+
+            widget_type = type(widget).__name__
+
+            # Define configurations safely using get_color
+            configs = {}
+            # --- Standard CTk Widgets ---
+            if isinstance(widget, (ctk.CTkFrame, ctk.CTkScrollableFrame)):
+                configs["fg_color"] = get_color("color_primary", "transparent") # Default to transparent if missing
+                if isinstance(widget, ctk.CTkFrame):
+                     configs["border_color"] = get_color("border_color")
+
+            elif isinstance(widget, ctk.CTkButton):
+                configs["fg_color"] = get_color("button_color")
+                configs["hover_color"] = get_color("button_hover_color")
+                # Text color often uses the dark mode index 0 for better contrast on buttons
+                text_color_list = theme.get("text_color")
+                if isinstance(text_color_list, list) and len(text_color_list) > 0:
+                     configs["text_color"] = text_color_list[0]
+                else:
+                     configs["text_color"] = get_color("text_color") # Fallback
+
+            elif isinstance(widget, ctk.CTkLabel):
+                configs["text_color"] = get_color("text_color")
+
+            elif isinstance(widget, ctk.CTkEntry):
+                configs["fg_color"] = get_color("input_bg_color")
+                configs["border_color"] = get_color("border_color")
+                configs["text_color"] = get_color("text_color")
+
+            elif isinstance(widget, (ctk.CTkCheckBox, ctk.CTkSwitch)):
+                configs["fg_color"] = get_color("button_color")
+                configs["border_color"] = get_color("border_color")
+                configs["text_color"] = get_color("text_color")
+
+            elif isinstance(widget, ctk.CTkProgressBar):
+                configs["fg_color"] = get_color("input_bg_color")
+                configs["progress_color"] = get_color("progressbar_color")
+
+            elif isinstance(widget, ctk.CTkSlider):
+                configs["fg_color"] = get_color("input_bg_color")
+                configs["progress_color"] = get_color("progressbar_color")
+                configs["button_color"] = get_color("button_color")
+                configs["button_hover_color"] = get_color("button_hover_color")
+
+            elif isinstance(widget, (ctk.CTkOptionMenu, ctk.CTkComboBox)):
+                configs["fg_color"] = get_color("button_color")
+                configs["button_color"] = get_color("button_hover_color")
+                 # Text color often uses the dark mode index 0 for better contrast on buttons
+                text_color_list = theme.get("text_color")
+                if isinstance(text_color_list, list) and len(text_color_list) > 0:
+                     configs["text_color"] = text_color_list[0]
+                else:
+                     configs["text_color"] = get_color("text_color") # Fallback
+
+            elif isinstance(widget, ctk.CTkTextbox):
+                configs["fg_color"] = get_color("input_bg_color")
+                configs["border_color"] = get_color("border_color")
+                configs["text_color"] = get_color("text_color")
+
+            elif isinstance(widget, ctk.CTkTabview):
+                 configs["fg_color"] = get_color("color_primary", "transparent")
+                 configs["segmented_button_selected_color"] = get_color("button_color")
+                 configs["segmented_button_unselected_color"] = get_color("color_secondary")
+                 configs["segmented_button_selected_hover_color"] = get_color("button_hover_color")
+                 configs["text_color"] = get_color("text_color")
+
+            # --- Custom WidgetFrame Title Bar ---
+            # Check if it's the title_bar frame within our custom WidgetFrame
+            # This relies on the parent structure, might need adjustment if structure changes
+            if widget_type == "CTkFrame" and hasattr(widget.master, 'title_bar') and widget == widget.master.title_bar:
+                 # Apply specific colors to title bars if needed, or let them inherit from CTkFrame
+                 configs["fg_color"] = get_color("color_secondary") # Example: Use secondary color for title bars
+                 pass # Or keep default CTkFrame behavior
+
+            # Apply configurations if any exist and are not None
+            valid_configs = {k: v for k, v in configs.items() if v is not None}
+            if valid_configs:
+                 widget.configure(**valid_configs)
+
+        except tk.TclError as e:
+             # Ignore errors if widget is destroyed during theme application
+             if "invalid command name" not in str(e):
+                 print(f"TclError applying theme to {type(widget).__name__}: {str(e)}")
+        except Exception as e:
+            # If error occurs for a specific widget, continue with others
+            print(f"Error applying theme to {type(widget).__name__}: {str(e)}")
+
+    def get_current_theme(self):
+        """Get the name of the currently applied theme."""
+        return self.current_theme_name
+
+    def get_theme_names(self):
+        """Get a list of available theme names."""
+        return list(self.themes.keys())
+
+    def create_theme_file(self, theme_name, theme_data):
+        """
+        Create a new theme file.
+
+        Args:
+            theme_name: Name for the new theme
+            theme_data: Theme data dictionary
+
+        Returns:
+            bool: True if theme was created successfully, False otherwise
+        """
+        try:
+            # Ensure theme has all required properties
+            required_properties = [
+                "color_primary", "color_secondary", "text_color",
+                "input_bg_color", "hover_color", "button_color",
+                "button_hover_color", "border_color", "progressbar_color"
+            ]
+
+            for prop in required_properties:
+                if prop not in theme_data:
+                    print(f"Missing required property: {prop}")
+                    return False
+
+            # Add required properties if missing
+            if "chart_colors" not in theme_data:
+                theme_data["chart_colors"] = ["#3d8eff", "#14c38d", "#f45050", "#ff9500", "#c633ff"]
+
+            if "success_color" not in theme_data:
+                theme_data["success_color"] = "#00cc66"
+
+            if "warning_color" not in theme_data:
+                theme_data["warning_color"] = "#ffcc00"
+
+            if "error_color" not in theme_data:
+                theme_data["error_color"] = "#ff3333"
+
+            # Save theme to file
+            file_name = f"{theme_name}.json"
+            with open(file_name, 'w') as f:
+                json.dump(theme_data, f, indent=2)
+
+            # Add theme to available themes
+            self.themes[theme_name] = theme_data
+
+            return True
+        except Exception as e:
+            print(f"Error creating theme: {str(e)}")
+            return False
+
+if __name__ == "__main__":
+    # Test the theme manager
+    root = ctk.CTk()
+    theme_manager = ThemeManager(root)
+
+    # Print available themes
+    print("Available themes:", theme_manager.get_theme_names())
+
+    # Apply a theme
+    theme_manager.apply_theme("enhanced_blue")
+    print("Current theme:", theme_manager.get_current_theme())
+
+    # Create a simple window to test the theme
+    root.title("Theme Manager Test")
+    root.geometry("400x300")
+
+    # Create some test widgets
+    frame = ctk.CTkFrame(root)
+    frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+    label = ctk.CTkLabel(frame, text="Theme Manager Test")
+    label.pack(pady=10)
+
+    entry = ctk.CTkEntry(frame, placeholder_text="Enter text here")
+    entry.pack(pady=10)
+
+    button = ctk.CTkButton(frame, text="Test Button")
+    button.pack(pady=10)
+
+    checkbox = ctk.CTkCheckBox(frame, text="Test Checkbox")
+    checkbox.pack(pady=10)
+
+    root.mainloop()

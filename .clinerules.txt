@@ -1,0 +1,18 @@
+# Fitness App Project Rules
+
+## Core Components
+- User Profile must include ALL required fields for calculations.
+- Weekly Progress must store historical data.
+- Reports must validate data completeness before generation.
+- Dashboard must refresh automatically with updated data.
+
+## Data Requirements
+- Each calculation must document required inputs.
+- Missing fields must trigger explicit user notifications.
+- Default values must be clearly marked as estimates.
+
+## UI Guidelines
+- Use consistent layout across all sections.
+- Implement responsive design for all screen sizes.
+- Provide visual feedback for all user actions.
+- Clearly indicate required vs. optional fields.

@@ -1,80 +1,196 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { formatDate, formatWeight, formatPercent, calculateBMI, getBMICategory } from "@/lib/utils"
+import { useAuth } from "@/contexts/auth-context"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function Progress() {
   const { toast } = useToast()
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
   
-  // Mock progress data
-  const progressHistory = [
-    { date: new Date("2025-01-01"), weight: 195, bodyFat: 22, neck: 16, waist: 36, hips: 42 },
-    { date: new Date("2025-02-01"), weight: 190, bodyFat: 20, neck: 15.5, waist: 35, hips: 41 },
-    { date: new Date("2025-03-01"), weight: 187, bodyFat: 19, neck: 15.5, waist: 34, hips: 40 },
-    { date: new Date("2025-04-01"), weight: 185, bodyFat: 18, neck: 15, waist: 33, hips: 39 },
-  ]
+  // Progress history state
+  const [progressHistory, setProgressHistory] = useState<any[]>([])
+  
+  // User data state (height and gender)
+  const [userData, setUserData] = useState({
+    height: 180, // cm
+    gender: "M",
+  })
   
   const [newEntry, setNewEntry] = useState({
     weight: "",
     neck: "",
     waist: "",
     hips: "",
+    bodyFat: "", // For manual entry
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Fetch user's profile and progress history on page load
+  useEffect(() => {
+    async function fetchData() {
+      if (!user) return
+      
+      try {
+        setIsFetching(true)
+        
+        // Fetch user profile for height and gender
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (profileError) {
+          console.error('Error fetching profile:', profileError)
+        } else if (profileData) {
+          setUserData({
+            height: profileData.height || 180,
+            gender: profileData.gender || "M",
+          })
+        }
+        
+        // Fetch progress history
+        const { data: progressData, error: progressError } = await supabase
+          .from('progress_entries')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('date', { ascending: false })
+        
+        if (progressError) {
+          throw progressError
+        }
+        
+        if (progressData) {
+          // Transform the data to match the expected format
+          const formattedData = progressData.map(entry => ({
+            date: new Date(entry.date),
+            weight: entry.weight,
+            bodyFat: entry.body_fat_percentage,
+            neck: entry.neck,
+            waist: entry.waist,
+            hips: entry.hips,
+          }))
+          
+          setProgressHistory(formattedData)
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        toast({
+          title: "Failed to load data",
+          description: "There was a problem loading your progress data. Please refresh the page.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsFetching(false)
+      }
+    }
+    
+    fetchData()
+  }, [user, toast])
+
+  const handleChange = (e: any) => {
     const { name, value } = e.target
-    setNewEntry((prev) => ({ ...prev, [name]: value }))
+    setNewEntry((prev: any) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault()
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save your progress.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsLoading(true)
 
     try {
-      // TODO: Implement actual progress entry logic
-      console.log("New progress entry:", newEntry)
+      // Determine body fat percentage (use manual entry if provided, otherwise calculate)
+      let bodyFatPercentage = newEntry.bodyFat 
+        ? parseFloat(newEntry.bodyFat) 
+        : calculateBodyFat(
+            parseFloat(newEntry.neck),
+            parseFloat(newEntry.waist),
+            parseFloat(newEntry.hips),
+            userData.height,
+            userData.gender === "M"
+          )
       
-      // Simulate successful entry
-      setTimeout(() => {
-        toast({
-          title: "Progress recorded",
-          description: "Your new measurements have been saved successfully.",
-        })
-        setNewEntry({
-          weight: "",
-          neck: "",
-          waist: "",
-          hips: "",
-        })
-        setIsLoading(false)
-      }, 1000)
+      // Prepare the data for Supabase
+      const progressRecord = {
+        user_id: user.id,
+        date: new Date().toISOString().split('T')[0],
+        weight: parseFloat(newEntry.weight),
+        body_fat_percentage: bodyFatPercentage,
+        neck: parseFloat(newEntry.neck),
+        waist: parseFloat(newEntry.waist),
+        hips: parseFloat(newEntry.hips),
+        created_at: new Date().toISOString(),
+      }
+      
+      // Insert the new progress entry
+      const { data, error } = await supabase
+        .from('progress_entries')
+        .insert(progressRecord)
+        .select()
+      
+      if (error) throw error
+      
+      // Update the local state with the new entry
+      if (data && data.length > 0) {
+        const newProgressEntry = {
+          date: new Date(data[0].date),
+          weight: data[0].weight,
+          bodyFat: data[0].body_fat_percentage,
+          neck: data[0].neck,
+          waist: data[0].waist,
+          hips: data[0].hips,
+        }
+        
+        setProgressHistory([newProgressEntry, ...progressHistory])
+      }
+      
+      toast({
+        title: "Progress recorded",
+        description: "Your new measurements have been saved successfully.",
+      })
+      
+      // Reset the form
+      setNewEntry({
+        weight: "",
+        neck: "",
+        waist: "",
+        hips: "",
+        bodyFat: "",
+      })
     } catch (error) {
+      console.error('Error saving progress:', error)
       toast({
         title: "Entry failed",
         description: "There was a problem saving your progress. Please try again.",
         variant: "destructive",
       })
+    } finally {
       setIsLoading(false)
     }
   }
 
-  // Calculate body fat using Navy method (example for male)
+  // Calculate body fat using Navy method
   const calculateBodyFat = (neck: number, waist: number, hips: number, height: number, isMale: boolean) => {
     if (isMale) {
       return 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(height)) - 450
     } else {
       return 495 / (1.29579 - 0.35004 * Math.log10(waist + hips - neck) + 0.22100 * Math.log10(height)) - 450
     }
-  }
-
-  // Mock user data
-  const userData = {
-    height: 180, // cm
-    gender: "M",
   }
 
   // Calculate estimated body fat if all measurements are provided
@@ -87,6 +203,14 @@ export default function Progress() {
         userData.gender === "M"
       )
     : null
+
+  if (isFetching) {
+    return (
+      <div className="container mx-auto p-6 flex justify-center items-center min-h-[50vh]">
+        <p>Loading your progress data...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -152,8 +276,23 @@ export default function Progress() {
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="bodyFat">Body Fat % (optional)</Label>
+                <Input
+                  id="bodyFat"
+                  name="bodyFat"
+                  type="number"
+                  step="0.1"
+                  placeholder="Enter manually or use calculated value"
+                  value={newEntry.bodyFat}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave blank to use Navy Method calculation
+                </p>
+              </div>
               
-              {estimatedBodyFat !== null && (
+              {estimatedBodyFat !== null && !newEntry.bodyFat && (
                 <div className="mt-4 p-4 bg-muted rounded-md">
                   <p className="text-sm font-medium">
                     Estimated Body Fat: {formatPercent(estimatedBodyFat / 100)}

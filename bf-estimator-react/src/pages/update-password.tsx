@@ -1,21 +1,33 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from "@/contexts/auth-context"
+import { supabase } from "@/lib/supabaseClient"
 
-export default function Login() {
+export default function UpdatePassword() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { signIn } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    email: "",
     password: "",
+    confirmPassword: "",
   })
+
+  // Check if we have a recovery token in the URL
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    if (!hashParams.get("access_token")) {
+      toast({
+        title: "Invalid reset link",
+        description: "This password reset link is invalid or has expired.",
+        variant: "destructive",
+      })
+      navigate("/reset-password")
+    }
+  }, [navigate, toast])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -24,25 +36,39 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsLoading(true)
 
     try {
-      const { error } = await signIn(formData.email, formData.password)
+      const { error } = await supabase.auth.updateUser({
+        password: formData.password,
+      })
       
       if (error) {
         throw error
       }
       
       toast({
-        title: "Login successful",
-        description: "Welcome back to BF Estimator!",
+        title: "Password updated",
+        description: "Your password has been successfully updated.",
       })
-      navigate("/")
+      
+      // Redirect to login page
+      navigate("/login")
     } catch (error: any) {
-      console.error("Login error:", error)
+      console.error("Password update error:", error)
       toast({
-        title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        title: "Password update failed",
+        description: error.message || "There was a problem updating your password. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -54,39 +80,15 @@ export default function Login() {
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Login</CardTitle>
+          <CardTitle className="text-2xl text-center">Update Password</CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access your account
+            Enter your new password
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="your.email@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <a
-                  href="#"
-                  className="text-sm text-primary hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    navigate("/reset-password")
-                  }}
-                >
-                  Forgot password?
-                </a>
-              </div>
+              <Label htmlFor="password">New Password</Label>
               <Input
                 id="password"
                 name="password"
@@ -96,22 +98,33 @@ export default function Login() {
                 required
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+            </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading ? "Updating password..." : "Update Password"}
             </Button>
             <div className="text-center text-sm">
-              Don't have an account?{" "}
+              Remember your password?{" "}
               <a 
                 href="#" 
                 className="text-primary hover:underline"
                 onClick={(e) => {
                   e.preventDefault()
-                  navigate("/register")
+                  navigate("/login")
                 }}
               >
-                Register
+                Back to Login
               </a>
             </div>
           </CardFooter>

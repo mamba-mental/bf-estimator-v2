@@ -6,6 +6,8 @@ import { ThemeProvider } from '@/components/theme-provider'
 import Dashboard from '@/pages/dashboard'
 import Login from '@/pages/login'
 import Register from '@/pages/register'
+import ResetPassword from '@/pages/reset-password'
+import UpdatePassword from '@/pages/update-password'
 import Profile from '@/pages/profile'
 import Goals from '@/pages/goals'
 import Progress from '@/pages/progress'
@@ -24,6 +26,8 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>

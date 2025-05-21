@@ -61,12 +61,18 @@ bf-estimator-react/
    npm install
    ```
 
-3. Copy the example environment file and update with your credentials:
+3. Copy the example environment file:
    ```bash
    cp .env.example .env
    ```
 
-4. Update the `.env` file with your Supabase and AI service credentials.
+4. Open the newly created `.env` file and fill in the required values for your Supabase project and AI API keys:
+   ```dotenv
+   VITE_SUPABASE_URL=YOUR_SUPABASE_URL
+   VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+   VITE_DEEPSEEK_API_KEY=YOUR_DEEPSEEK_API_KEY
+   VITE_CHATGPT_API_KEY=YOUR_CHATGPT_API_KEY
+   ```
 
 ### Development
 
@@ -107,6 +113,15 @@ The built application will be in the `dist` directory.
 - **Interactive Dashboard**: Visualize progress, trends, and milestones
 - **Reports**: Generate comprehensive reports on progress and projections
 - **Mobile Optimization**: Responsive design for use on any device
+
+## New Features
+
+This enhanced version introduces several key features:
+
+- **Supabase Integration**: Persistent data storage for user profiles, goals, and progress tracking.
+- **Advanced Reporting**: Comprehensive reports generated from tracked data.
+- **AI Features**: Integration with AI services for personalized suggestions and insights.
+- **New UI**: A modern, responsive user interface built with React, Vite, and TypeScript.
 
 ## Development Roadmap
 

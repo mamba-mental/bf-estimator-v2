@@ -2,11 +2,13 @@ import { useState } from "react"
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { signOut, user } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
   const navItems = [
@@ -17,13 +19,27 @@ export default function Layout() {
     { path: "/profile", label: "Profile" },
   ]
   
-  const handleLogout = () => {
-    // This is a placeholder for actual logout logic
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    })
-    navigate("/login")
+  const handleLogout = async () => {
+    try {
+      const { error } = await signOut()
+      
+      if (error) {
+        throw error
+      }
+      
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      })
+      navigate("/login")
+    } catch (error: any) {
+      console.error("Logout error:", error)
+      toast({
+        title: "Logout failed",
+        description: error.message || "There was a problem logging out. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
   
   const toggleMobileMenu = () => {
@@ -39,6 +55,11 @@ export default function Layout() {
             <Link to="/" className="flex items-center gap-2">
               <span className="font-bold text-xl">BF Estimator</span>
             </Link>
+          </div>
+          
+          {/* User info */}
+          <div className="hidden md:block text-sm">
+            {user && <span>Hello, {user.user_metadata?.name || user.email}</span>}
           </div>
           
           {/* Desktop Navigation */}

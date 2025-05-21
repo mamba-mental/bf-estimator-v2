@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function Register() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { signUp } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -37,21 +39,28 @@ export default function Register() {
     setIsLoading(true)
 
     try {
-      // TODO: Implement actual registration logic
-      console.log("Registration attempt with:", formData)
+      const { error, user } = await signUp(
+        formData.email,
+        formData.password,
+        formData.name
+      )
       
-      // Simulate successful registration
-      setTimeout(() => {
-        toast({
-          title: "Registration successful",
-          description: "Your account has been created. Welcome to BF Estimator!",
-        })
-        navigate("/")
-      }, 1000)
-    } catch (error) {
+      if (error) {
+        throw error
+      }
+      
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created. Welcome to BF Estimator!",
+      })
+      
+      // Redirect to login page or dashboard
+      navigate("/")
+    } catch (error: any) {
+      console.error("Registration error:", error)
       toast({
         title: "Registration failed",
-        description: "There was a problem creating your account. Please try again.",
+        description: error.message || "There was a problem creating your account. Please try again.",
         variant: "destructive",
       })
     } finally {

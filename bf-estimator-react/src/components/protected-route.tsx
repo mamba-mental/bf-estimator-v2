@@ -14,16 +14,24 @@ export default function ProtectedRoute() {
   // Redirect if not authenticated
   if (!user) {
     // We call toast inside a setTimeout to avoid the render-phase state update
-    setTimeout(() => {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to access this page",
-        variant: "destructive",
-      });
-    }, 0);
+    // and use sessionStorage to prevent multiple toasts
+    if (!sessionStorage.getItem('auth_toast_shown')) {
+      setTimeout(() => {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to access this page",
+          variant: "destructive",
+        });
+        // Set a flag to prevent multiple toasts
+        sessionStorage.setItem('auth_toast_shown', 'true');
+      }, 0);
+    }
     
     // Redirect to login page
     return <Navigate to="/login" replace />
+  } else {
+    // Clear the flag when user logs in
+    sessionStorage.removeItem('auth_toast_shown');
   }
   
   // If authenticated, render the child routes

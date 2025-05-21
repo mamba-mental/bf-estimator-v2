@@ -6,7 +6,11 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 5
-const TOAST_REMOVE_DELAY = 1000000
+// Reduced to 3 seconds for faster dismissal
+const TOAST_REMOVE_DELAY = 3000
+
+// Auto-dismiss toasts after 3 seconds
+const AUTO_DISMISS_TOAST = true
 
 type ToasterToast = ToastProps & {
   id: string
@@ -77,6 +81,11 @@ const reducer = (state: State, action: Action): State => {
       // ! Side effects ! - This could be extracted into a dismissToast() action,
       // but I'll keep it here for simplicity
       if (toastId) {
+        // Clear any existing timeout for this toast
+        if (toastTimeouts.has(toastId)) {
+          clearTimeout(toastTimeouts.get(toastId))
+        }
+        
         toastTimeouts.set(
           toastId,
           setTimeout(() => {
@@ -149,6 +158,13 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+  
+  // Auto-dismiss toast after delay
+  if (AUTO_DISMISS_TOAST) {
+    setTimeout(() => {
+      dismiss();
+    }, TOAST_REMOVE_DELAY);
+  }
 
   return {
     id: id,

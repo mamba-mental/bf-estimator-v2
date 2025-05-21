@@ -11,9 +11,13 @@ import { useToast } from "@/components/ui/use-toast"
 export function Toaster() {
   const { toasts } = useToast()
 
+  // Show only the most recent toast to prevent stacking
+  const mostRecentToast = toasts.length > 0 ? toasts[0] : null;
+
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {mostRecentToast && (function () {
+        const { id, title, description, action, ...props } = mostRecentToast;
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">
@@ -25,8 +29,8 @@ export function Toaster() {
             {action}
             <ToastClose />
           </Toast>
-        )
-      })}
+        );
+      })()}
       <ToastViewport />
     </ToastProvider>
   )

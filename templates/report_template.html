@@ -47,6 +47,16 @@
             <tr><td>Currently Using Resistance Training:</td><td>{{ resistance_training }}</td></tr>
             <tr><td>Athlete Status:</td><td>{{ athlete_status }}</td></tr>
         </table>
+        
+        <div class="supplemental-info">
+            <h3>Understanding Your Activity Profile:</h3>
+            <ul>
+                <li><strong>Activity Level:</strong> Your {{ activity_level }} lifestyle contributes significantly to your daily caloric expenditure.</li>
+                <li><strong>Training Experience:</strong> As a {{ experience_level }} trainee, this affects your potential muscle gain and recovery needs.</li>
+                <li><strong>Workout Frequency:</strong> Training {{ workout_frequency }} days per week helps optimize your metabolic rate and recovery periods.</li>
+                <li><strong>Resistance Training:</strong> {{ "Your use of" if resistance_training == "Yes" else "Not currently using" }} resistance training {{ "enhances" if resistance_training == "Yes" else "could enhance" }} muscle preservation during weight loss.</li>
+            </ul>
+        </div>
     </section>
 
     <!-- Page 2 -->
@@ -113,9 +123,10 @@
     <!-- Page 4 -->
     <div class="page-break"></div>
 
-    <section>
-        <h2>7. Weekly Progress Forecast</h2>
-        <table class="small-table">
+    <div class="combined-sections">
+        <section>
+            <h2>7. Weekly Progress Forecast</h2>
+            <table class="small-table">
             <tr>
                 <th>Date</th>
                 <th>Weight (lbs)</th>
@@ -147,9 +158,9 @@
         </table>
     </section>
 
-    <section>
-        <h2>8. Body Composition Changes</h2>
-        <table class="small-table">
+        <section>
+            <h2>8. Body Composition Changes</h2>
+            <table class="small-table">
             <tr>
                 <th>Body Fat Category</th>
                 <th>Body Fat %</th>
@@ -167,7 +178,8 @@
             </tr>
             {% endfor %}
         </table>
-    </section>
+        </section>
+    </div>
 
     <!-- Page 5 -->
     <div class="page-break"></div>
@@ -185,6 +197,16 @@
             <tr><td>Weight Loss:</td><td>{{ "%.2f"|format(avg_weekly_loss) }} lbs</td></tr>
             <tr><td>Muscle Gain:</td><td>{{ "%.2f"|format(avg_muscle_gain) }} lbs</td></tr>
         </table>
+
+        <div class="supplemental-info">
+            <h3>Understanding Your Results:</h3>
+            <ul>
+                <li><strong>Total Weight Loss:</strong> Your projected loss of {{ "%.2f"|format(total_weight_loss) }} lbs is designed to be sustainable and preserve muscle mass.</li>
+                <li><strong>Fat Loss:</strong> A reduction of {{ "%.2f"|format(total_bf_loss) }}% body fat represents a healthy rate of fat loss.</li>
+                <li><strong>Muscle Changes:</strong> The program aims to gain/maintain {{ "%.2f"|format(total_muscle_gain) }} lbs of muscle while losing fat.</li>
+                <li><strong>Weekly Progress:</strong> Targeting {{ "%.2f"|format(avg_weekly_loss) }} lbs per week ensures steady, sustainable progress.</li>
+            </ul>
+        </div>
     </section>
 
     <section>
@@ -195,6 +217,15 @@
             <tr><td>Expected Adaptation:</td><td>{{ "%.2f"|format(adaptation_percentage) }}% change</td></tr>
             <tr><td>Lean Mass Preservation:</td><td>{{ "%.2f"|format(lean_mass_preserved) }}%</td></tr>
         </table>
+
+        <div class="supplemental-info">
+            <h3>Understanding Metabolic Adaptation:</h3>
+            <ul>
+                <li><strong>Initial Response:</strong> Your metabolism starts at {{ "%.2f"|format(week_1_adaptation) }}x baseline, reflecting your current activity level.</li>
+                <li><strong>Progressive Changes:</strong> A {{ "%.2f"|format(adaptation_percentage) }}% adaptation is expected as your body becomes more efficient.</li>
+                <li><strong>Muscle Preservation:</strong> The program is designed to maintain {{ "%.2f"|format(lean_mass_preserved) }}% of your lean mass.</li>
+            </ul>
+        </div>
     </section>
 
     <section>
@@ -203,6 +234,15 @@
             <tr><td>Maintenance Calories:</td><td>{{ "%.2f"|format(final_tdee) }} calories/day</td></tr>
             <tr><td>Weekly Energy Output:</td><td>{{ "%.2f"|format(final_weekly_caloric_output) }} calories</td></tr>
         </table>
+
+        <div class="supplemental-info">
+            <h3>Understanding Your Final Targets:</h3>
+            <ul>
+                <li><strong>Maintenance Level:</strong> Your final daily maintenance of {{ "%.2f"|format(final_tdee) }} calories reflects your new metabolic baseline.</li>
+                <li><strong>Weekly Output:</strong> Maintaining a weekly energy output of {{ "%.2f"|format(final_weekly_caloric_output) }} calories will help sustain your results.</li>
+                <li><strong>Long-term Success:</strong> These targets are designed to help you maintain your new weight and body composition.</li>
+            </ul>
+        </div>
     </section>
 
     <!-- Page 6+ -->

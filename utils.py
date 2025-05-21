@@ -51,7 +51,7 @@ def estimate_tef(protein_intake):
         assumption that approximately 30% of protein calories are expended 
         during digestion and processing.
     """
-    return protein_intake * 0.3
+    return protein_intake * 4 * 0.3  # Convert protein grams to calories (1g = 4 cal) then multiply by TEF factor
 
 
 def estimate_neat(job_activity, leisure_activity):
@@ -79,8 +79,17 @@ def estimate_neat(job_activity, leisure_activity):
         - Leisure Activity: 'sedentary' = 50, 'light' = 150, 
                             'moderate' = 250, 'active' = 350
     """
+    # Convert numeric input to activity level strings
+    job_levels = {1: 'sedentary', 2: 'light', 3: 'moderate', 4: 'active'}
+    leisure_levels = {1: 'sedentary', 2: 'light', 3: 'moderate', 4: 'active'}
+    
+    # Map activity levels to caloric values
     job_factors = {'sedentary': 100, 'light': 300, 'moderate': 500, 'active': 700}
     leisure_factors = {'sedentary': 50, 'light': 150, 'moderate': 250, 'active': 350}
+    
+    # Convert numeric inputs to string levels
+    job_activity = job_levels.get(int(job_activity), 'sedentary')
+    leisure_activity = leisure_levels.get(int(leisure_activity), 'sedentary')
     return job_factors[job_activity] + leisure_factors[leisure_activity]
 
 

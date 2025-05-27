@@ -1,4 +1,5 @@
-from .PRIME_Utils import calculate_rmr, estimate_tef, estimate_neat, calculate_age, DIET_MULTIPLIERS, EXERCISE_ADJUSTMENTS, calculate_tdee
+from .PRIME_Utils import estimate_tef, estimate_neat, DIET_MULTIPLIERS, EXERCISE_ADJUSTMENTS, calculate_tdee, calculate_age
+from .PRIME_RMR_Calculations_v2 import get_rmr_and_tdee
 import datetime
 
 def calculate_lean_mass_preservation_scores(workout_days, workout_type):
@@ -228,11 +229,30 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
 
     # Initial calculations
     age = calculate_age(dob, start_date)
-    rmr = calculate_rmr(current_weight / 2.205, age, gender, height_cm, is_athlete)  # Convert lbs to kg
+    
+    # Use the more robust RMR calculation
+    profile_data = {
+        'current_weight': current_weight,
+        'height_feet': int(height_cm / 30.48),  # Convert cm to feet
+        'height_inches': round(((height_cm / 2.54) % 12)),  # Convert cm to inches
+        'gender': gender,
+        'dob': dob.strftime("%m/%d/%Y") if hasattr(dob, 'strftime') else dob,
+        'activity_factor': activity_level,
+        'is_athlete': is_athlete,
+        'diet_type': diet_type,
+        'exercise_type': exercise_type,
+        'job_activity': job_activity,
+        'leisure_activity': leisure_activity,
+        'is_bodybuilder': is_bodybuilder,
+        'protein_intake': daily_protein_intake
+    }
+    
+    # Get RMR and TDEE using the robust calculation
+    rmr, tdee = get_rmr_and_tdee(profile_data)
+    
     protein_cal = daily_protein_intake * 4  # Rough estimate, assumes balanced macros
     carb_cal = protein_cal  # Placeholder for balanced diet
     fat_cal = protein_cal / 2
-    tdee = calculate_tdee(current_weight / 2.205, age, gender, activity_level, height_cm, is_athlete, protein_cal, carb_cal, fat_cal, job_activity, leisure_activity, exercise_type)
     
     # Calculate initial deficit based on dual goals
     remaining_weeks = weeks
@@ -261,8 +281,26 @@ def predict_weight_loss(current_weight, current_bf, goal_weight, goal_bf, start_
     for week in range(1, weeks + 1):
         # Recalculate metrics weekly
         age = calculate_age(dob, start_date + datetime.timedelta(weeks=week))
-        rmr = calculate_rmr(current_weight / 2.205, age, gender, height_cm, is_athlete)
-        tdee = calculate_tdee(current_weight / 2.205, age, gender, activity_level, height_cm, is_athlete, protein_cal, carb_cal, fat_cal, job_activity, leisure_activity, exercise_type)
+        
+        # Use the more robust RMR calculation for weekly updates
+        profile_data = {
+            'current_weight': current_weight,
+            'height_feet': int(height_cm / 30.48),  # Convert cm to feet
+            'height_inches': round(((height_cm / 2.54) % 12)),  # Convert cm to inches
+            'gender': gender,
+            'dob': dob.strftime("%m/%d/%Y") if hasattr(dob, 'strftime') else dob,
+            'activity_factor': activity_level,
+            'is_athlete': is_athlete,
+            'diet_type': diet_type,
+            'exercise_type': exercise_type,
+            'job_activity': job_activity,
+            'leisure_activity': leisure_activity,
+            'is_bodybuilder': is_bodybuilder,
+            'protein_intake': daily_protein_intake
+        }
+        
+        # Get updated RMR and TDEE using the robust calculation
+        rmr, tdee = get_rmr_and_tdee(profile_data)
 
         # Recalculate remaining goals and required deficit
         remaining_weeks = max(1, weeks - week + 1)

@@ -31,10 +31,19 @@ def suppress_stdout_stderr():
             yield (err, out)
 
 def run_terminal_mode(use_test_data=False):
-    from main import run_user_interaction, print_summary
+    from main import run_user_interaction
+    from new_prime_python_code.PRIME_Report_Generator_v3 import generate_prime_report_terminal
     progression, initial_data = run_user_interaction(use_test_data=use_test_data)
-    saved_files = print_summary(progression, initial_data)
-    # No extra prompting here
+    
+    # Generate comprehensive PRIME report
+    markdown_path, pdf_path = generate_prime_report_terminal(initial_data, progression)
+    
+    print(f"\n✅ Report Generation Complete!")
+    print(f"📄 Markdown Report: {markdown_path}")
+    if pdf_path:
+        print(f"📋 PDF Report: {pdf_path}")
+    else:
+        print("⚠️  PDF generation failed - check dependencies")
 
 def run_web_mode():
     from app import app

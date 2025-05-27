@@ -10,19 +10,25 @@
 # Version: 1.2.5
 # License: Apache License 2.0
 # --- End of Header ---
+import sys
+sys.path.append(r"Z:\2024.0917 - Bf-estimator-v2\122924_bf-estimator-terminal\new_prime_python_code")
+from new_prime_python_code.PRIME_Calculations import predict_weight_loss, calculate_lean_mass_preservation_scores
+from new_prime_python_code.PRIME_Utils import calculate_rmr, calculate_tdee, calculate_age
+from new_prime_python_code.PRIME_Diet_Calculations_v2 import calculate_weekly_rate_of_fat_loss, calculate_weekly_muscle_gain
+from new_prime_python_code.PRIME_Report_Generator_v3 import generate_prime_report_terminal
 
-from calculations import (
-    calculate_lean_mass_preservation_scores, calculate_tdee,
-    calculate_metabolic_adaptation, distribute_weight_loss,
-    calculate_weekly_caloric_output, calculate_initial_daily_calories,
-    predict_weight_loss)
-from report_generation import print_summary, generate_comprehensive_report, save_report
+# from calculations import (
+#     calculate_lean_mass_preservation_scores, calculate_tdee,
+#     calculate_metabolic_adaptation, distribute_weight_loss,
+#     calculate_weekly_caloric_output, calculate_initial_daily_calories,
+#     predict_weight_loss)
+# from report_generation import print_summary, generate_comprehensive_report, save_report
 from test_data import TEST_DATA
 from user_interaction import (
     get_float_input, get_int_input, get_experience_level_input,
     get_date_input, get_yes_no_input, get_choice_input
 )
-from utils import calculate_age
+# from utils import calculate_age
 import os
 import sys
 from datetime import datetime
@@ -79,6 +85,10 @@ def run_user_interaction(use_test_data=False, user_data=None):
     ])
     resistance_training = get_yes_no_input("Are you doing resistance training? (Y/N): ")
     is_athlete = get_yes_no_input("Are you an athlete? (Y/N): ")
+    diet_type = input("Enter diet type (keto, high_protein, balanced, high_carb): ").strip().lower()
+    ped_use = input("PED use? (y/n): ").strip().lower() == 'y'
+    exercise_type = input("Exercise type (resistance, cardio, hiit): ").strip().lower()
+    sleep_quality = input("Sleep quality (good/poor): ").strip().lower()
     workout_type_choice = get_choice_input("What type of workouts do you primarily do?", [
         ("1", "Bodybuilding (Strength training and muscle building)"),
         ("2", "Cardio (Cardiovascular exercises like running or cycling)"),
@@ -163,12 +173,44 @@ def run_user_interaction(use_test_data=False, user_data=None):
 
     logger.debug(f"Initial data prepared: {initial_data}")
 
+    # Map activity level to string
+    activity_level_map = {
+        1: "sedentary",
+        2: "light",
+        3: "moderate",
+        4: "active",
+        5: "very active"
+    }
+    activity_level_str = activity_level_map.get(initial_data['activity_level'], "moderate")
+    
+    # Map job and leisure activity to strings
+    job_activity_map = {1: "sedentary", 2: "light", 3: "moderate", 4: "active"}
+    leisure_activity_map = {1: "sedentary", 2: "light", 3: "moderate", 4: "active"}
+    job_activity_str = job_activity_map.get(job_activity, "light")
+    leisure_activity_str = leisure_activity_map.get(leisure_activity, "light")
+    
     # Predict weight loss progression using the gathered and processed data.
     progression = predict_weight_loss(
-        current_weight, current_bf, goal_weight, goal_bf, start_date, end_date,
-        dob, gender, initial_data['activity_level'], height_cm, initial_data['is_athlete'], initial_data['resistance_training'],
-        protein_intake, volume_score, intensity_score, frequency_score, job_activity,
-        leisure_activity, initial_data['experience_level'], is_bodybuilder
+        current_weight=current_weight,
+        current_bf=current_bf,
+        goal_weight=goal_weight,
+        goal_bf=goal_bf,
+        start_date=start_date,
+        end_date=end_date,
+        dob=dob,
+        gender=gender,
+        activity_level=activity_level_str,
+        height_cm=height_cm,
+        is_athlete=initial_data['is_athlete'],
+        daily_protein_intake=protein_intake,
+        job_activity=job_activity_str,
+        leisure_activity=leisure_activity_str,
+        experience_level=initial_data['experience_level'],
+        is_bodybuilder=is_bodybuilder,
+        ped_use=ped_use,
+        diet_type=diet_type,
+        exercise_type=exercise_type,
+        sleep_quality=sleep_quality
     )
 
     logger.debug(f"Prediction completed. Progression length: {len(progression)}")
@@ -266,18 +308,50 @@ def process_test_data(data):
 
     logger.debug(f"Processed data: {processed_data}")
 
+    # Map activity level to string
+    activity_level_map = {
+        1: "sedentary",
+        2: "light",
+        3: "moderate",
+        4: "active",
+        5: "very active"
+    }
+    activity_level_str = activity_level_map.get(processed_data['activity_level'], "moderate")
+    
+    # Map job and leisure activity to strings
+    job_activity_map = {1: "sedentary", 2: "light", 3: "moderate", 4: "active"}
+    leisure_activity_map = {1: "sedentary", 2: "light", 3: "moderate", 4: "active"}
+    job_activity_str = job_activity_map.get(processed_data['job_activity'], "light")
+    leisure_activity_str = leisure_activity_map.get(processed_data['leisure_activity'], "light")
+    
+    # Get default values for new parameters
+    diet_type = data.get('diet_type', 'balanced')
+    ped_use = data.get('ped_use', False)
+    exercise_type = data.get('exercise_type', 'resistance')
+    sleep_quality = data.get('sleep_quality', 'good')
+    
     # Predict weight loss progression
     progression = predict_weight_loss(
-        processed_data['current_weight'], processed_data['current_bf'],
-        processed_data['goal_weight'], processed_data['goal_bf'],
-        processed_data['start_date'], processed_data['end_date'],
-        processed_data['dob'], processed_data['gender'],
-        processed_data['activity_level'], processed_data['height_cm'],
-        processed_data['is_athlete'], processed_data['resistance_training'],
-        processed_data['protein_intake'], processed_data['volume_score'],
-        processed_data['intensity_score'], processed_data['frequency_score'],
-        processed_data['job_activity'], processed_data['leisure_activity'],
-        processed_data['experience_level'], processed_data['is_bodybuilder']
+        current_weight=processed_data['current_weight'],
+        current_bf=processed_data['current_bf'],
+        goal_weight=processed_data['goal_weight'],
+        goal_bf=processed_data['goal_bf'],
+        start_date=processed_data['start_date'],
+        end_date=processed_data['end_date'],
+        dob=processed_data['dob'],
+        gender=processed_data['gender'],
+        activity_level=activity_level_str,
+        height_cm=processed_data['height_cm'],
+        is_athlete=processed_data['is_athlete'],
+        daily_protein_intake=processed_data['protein_intake'],
+        job_activity=job_activity_str,
+        leisure_activity=leisure_activity_str,
+        experience_level=processed_data['experience_level'],
+        is_bodybuilder=processed_data['is_bodybuilder'],
+        ped_use=ped_use,
+        diet_type=diet_type,
+        exercise_type=exercise_type,
+        sleep_quality=sleep_quality
     )
 
     logger.debug(f"Prediction completed. Progression length: {len(progression)}")
@@ -313,19 +387,15 @@ def main():
         else:
             progression, initial_data = run_user_interaction()
         
-        # Print summary of results to the user and capture saved file paths.
-        saved_files = print_summary(progression, initial_data)
+        # Generate comprehensive PRIME report
+        markdown_path, pdf_path = generate_prime_report_terminal(initial_data, progression)
         
-        # Handle the saved_files as needed.
-        if saved_files:
-            if 'markdown' in saved_files:
-                logger.info(f"Markdown report available at: {saved_files['markdown']}")
-            if 'pdf' in saved_files:
-                logger.info(f"PDF report available at: {saved_files['pdf']}")
-            if 'pdf_error' in saved_files:
-                logger.error(f"Failed to generate PDF report: {saved_files['pdf_error']}")
+        print(f"\n✅ Report Generation Complete!")
+        print(f"📄 Markdown Report: {markdown_path}")
+        if pdf_path:
+            print(f"📋 PDF Report: {pdf_path}")
         else:
-            logger.info("No reports were saved.")
+            print("⚠️  PDF generation failed - check dependencies")
 
 if __name__ == "__main__":
     main()
